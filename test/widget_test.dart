@@ -11,20 +11,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:otterlock/main.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('Login screen validates and submits PIN', (WidgetTester tester) async {
+    await tester.pumpWidget(const OtterLockApp());
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    expect(find.text('Entrer le code PIN'), findsOneWidget);
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
+    await tester.enterText(find.byType(TextFormField), '1234');
+    await tester.tap(find.byIcon(Icons.arrow_forward));
     await tester.pump();
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(find.text('Code PIN validé !'), findsOneWidget);
   });
 }
