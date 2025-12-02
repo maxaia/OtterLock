@@ -56,15 +56,36 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
   PasswordCategory _selectedCategory = PasswordCategory.all;
   final TextEditingController _searchController = TextEditingController();
+  
+  // Animation pour le bouton +
+  late AnimationController _addButtonController;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _rotationAnimation;
 
   // TODO: Remplacer par les vrais mots de passe stockés
   final List<dynamic> _passwords = [];
 
   @override
+  void initState() {
+    super.initState();
+    _addButtonController = AnimationController(
+      duration: const Duration(milliseconds: 200),
+      vsync: this,
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.85).animate(
+      CurvedAnimation(parent: _addButtonController, curve: Curves.easeInOut),
+    );
+    _rotationAnimation = Tween<double>(begin: 0.0, end: 0.125).animate(
+      CurvedAnimation(parent: _addButtonController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
   void dispose() {
+    _addButtonController.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -75,7 +96,13 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  void _onAddPassword() {
+  void _onAddPassword() async {
+    // Jouer l'animation
+    await _addButtonController.forward();
+    await _addButtonController.reverse();
+    
+    if (!mounted) return;
+    
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => const AddPasswordScreen(),
@@ -272,32 +299,43 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildAddButton() {
-    return Container(
-      width: 64,
-      height: 64,
-      decoration: BoxDecoration(
-        color: AppColors.primary,
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withOpacity(0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+    return AnimatedBuilder(
+      animation: _addButtonController,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: _scaleAnimation.value,
+          child: Transform.rotate(
+            angle: _rotationAnimation.value * 3.14159 * 2,
+            child: Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withOpacity(0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: _onAddPassword,
+                  borderRadius: BorderRadius.circular(32),
+                  child: const Icon(
+                    Icons.add_rounded,
+                    color: Colors.white,
+                    size: 32,
+                  ),
+                ),
+              ),
+            ),
           ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: _onAddPassword,
-          borderRadius: BorderRadius.circular(32),
-          child: const Icon(
-            Icons.add_rounded,
-            color: Colors.white,
-            size: 32,
-          ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

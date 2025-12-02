@@ -261,7 +261,20 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
       'expirationTime': _expirationTime,
     };
     
-    Navigator.of(context).pop(passwordData);
+    _showSuccessDialog(passwordData);
+  }
+
+  void _showSuccessDialog(Map<String, dynamic> passwordData) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => _SuccessDialog(
+        onContinue: () {
+          Navigator.of(dialogContext).pop();
+          Navigator.of(context).pop(passwordData);
+        },
+      ),
+    );
   }
 
   @override
@@ -279,9 +292,9 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 16),
-                    _buildLabeledField('Titre', _titleController, 'titre'),
+                    _buildLabeledField('Titre', _titleController, 'Titre'),
                     const SizedBox(height: 16),
-                    _buildLabeledField('Nom d\'utilisateur', _usernameController, 'nom d\'utilisateur'),
+                    _buildLabeledField('Nom d\'utilisateur', _usernameController, 'Nom d\'utilisateur'),
                     const SizedBox(height: 16),
                     _buildCategoryField(),
                     const SizedBox(height: 16),
@@ -879,6 +892,218 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Dialog de succès avec animation
+class _SuccessDialog extends StatefulWidget {
+  final VoidCallback onContinue;
+
+  const _SuccessDialog({required this.onContinue});
+
+  @override
+  State<_SuccessDialog> createState() => _SuccessDialogState();
+}
+
+class _SuccessDialogState extends State<_SuccessDialog> with TickerProviderStateMixin {
+  late AnimationController _lockController;
+  late AnimationController _checkController;
+  late AnimationController _scaleController;
+  
+  late Animation<double> _lockScale;
+  late Animation<double> _lockRotation;
+  late Animation<double> _checkScale;
+  late Animation<double> _backgroundScale;
+
+  @override
+  void initState() {
+    super.initState();
+    
+    // Animation du cadenas (rebond + rotation)
+    _lockController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+    _lockScale = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.2), weight: 50),
+      TweenSequenceItem(tween: Tween(begin: 1.2, end: 0.9), weight: 25),
+      TweenSequenceItem(tween: Tween(begin: 0.9, end: 1.0), weight: 25),
+    ]).animate(CurvedAnimation(parent: _lockController, curve: Curves.easeOut));
+    
+    _lockRotation = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: -0.1, end: 0.1), weight: 25),
+      TweenSequenceItem(tween: Tween(begin: 0.1, end: -0.05), weight: 25),
+      TweenSequenceItem(tween: Tween(begin: -0.05, end: 0.0), weight: 50),
+    ]).animate(CurvedAnimation(parent: _lockController, curve: Curves.easeOut));
+    
+    // Animation du check (apparition avec pop)
+    _checkController = AnimationController(
+      duration: const Duration(milliseconds: 400),
+      vsync: this,
+    );
+    _checkScale = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.4), weight: 60),
+      TweenSequenceItem(tween: Tween(begin: 1.4, end: 1.0), weight: 40),
+    ]).animate(CurvedAnimation(parent: _checkController, curve: Curves.easeOut));
+    
+    // Animation du fond
+    _scaleController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _backgroundScale = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: _scaleController, curve: Curves.easeOutBack),
+    );
+    
+    // Démarrer les animations en séquence
+    _startAnimations();
+  }
+
+  Future<void> _startAnimations() async {
+    _scaleController.forward();
+    await Future.delayed(const Duration(milliseconds: 100));
+    _lockController.forward();
+    await Future.delayed(const Duration(milliseconds: 300));
+    _checkController.forward();
+  }
+
+  @override
+  void dispose() {
+    _lockController.dispose();
+    _checkController.dispose();
+    _scaleController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: Listenable.merge([_lockController, _checkController, _scaleController]),
+      builder: (context, child) {
+        return Transform.scale(
+          scale: _backgroundScale.value,
+          child: Dialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            insetPadding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Icône cadenas avec check animé
+                  Transform.scale(
+                    scale: _lockScale.value,
+                    child: Transform.rotate(
+                      angle: _lockRotation.value,
+                      child: Container(
+                        width: 56,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withOpacity(0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            const Icon(
+                              Icons.lock_rounded,
+                              color: AppColors.primary,
+                              size: 28,
+                            ),
+                            Positioned(
+                              right: 8,
+                              bottom: 8,
+                              child: Transform.scale(
+                                scale: _checkScale.value,
+                                child: Container(
+                                  width: 18,
+                                  height: 18,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.success,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.white, width: 2),
+                                  ),
+                                  child: const Icon(
+                                    Icons.check,
+                                    color: Colors.white,
+                                    size: 10,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  // Message de succès
+                  Text(
+                    'Nouveau mot de passe\nenregistré avec succès !',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: AppColors.primary,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w500,
+                      height: 1.3,
+                      shadows: [
+                        Shadow(
+                          offset: const Offset(0, 2),
+                          blurRadius: 4,
+                          color: Colors.black.withOpacity(0.15),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  // Bouton Continuer
+                  GestureDetector(
+                    onTap: widget.onContinue,
+                    child: Container(
+                      width: 142,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.25),
+                            blurRadius: 4,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: const Center(
+                        child: Text(
+                          'Continuer',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
