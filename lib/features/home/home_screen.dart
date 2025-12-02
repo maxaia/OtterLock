@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
+import '../password/add_password_screen.dart';
 
 /// Catégories de mots de passe disponibles
 enum PasswordCategory {
@@ -75,11 +76,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _onAddPassword() {
-    // TODO: Navigation vers l'écran d'ajout de mot de passe
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Ajout de mot de passe à implémenter'),
-        backgroundColor: AppColors.primary,
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const AddPasswordScreen(),
       ),
     );
   }
@@ -147,31 +146,49 @@ class _HomeScreenState extends State<HomeScreen> {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: Colors.black.withOpacity(0.1),
+                width: 1,
               ),
             ),
-            child: TextField(
-              controller: _searchController,
-              style: const TextStyle(
-                fontSize: 15,
-                color: AppColors.textDark,
-              ),
-              decoration: InputDecoration(
-                hintText: 'Rechercher un mot de passe...',
-                hintStyle: TextStyle(
-                  fontSize: 15,
-                  color: Colors.grey[400],
+            clipBehavior: Clip.antiAlias,
+            child: Row(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(left: 14),
+                  child: Icon(
+                    Icons.search_rounded,
+                    color: Colors.grey[400],
+                    size: 22,
+                  ),
                 ),
-                prefixIcon: Icon(
-                  Icons.search_rounded,
-                  color: Colors.grey[400],
-                  size: 22,
+                Expanded(
+                  child: Center(
+                    child: TextField(
+                      controller: _searchController,
+                      cursorColor: AppColors.primary,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        color: AppColors.textDark,
+                      ),
+                      decoration: InputDecoration(
+                        hintText: 'Rechercher un mot de passe...',
+                        hintStyle: TextStyle(
+                          fontSize: 15,
+                          color: Colors.grey[400],
+                        ),
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        errorBorder: InputBorder.none,
+                        focusedErrorBorder: InputBorder.none,
+                        disabledBorder: InputBorder.none,
+                        filled: false,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                        isDense: true,
+                      ),
+                    ),
+                  ),
                 ),
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
-                ),
-              ),
+              ],
             ),
           ),
         ],
