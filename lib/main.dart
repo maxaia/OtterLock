@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import 'core/constants/app_colors.dart';
+import 'core/theme/app_theme.dart';
 import 'features/splash/splash_screen.dart';
 
 void main() {
@@ -26,35 +26,7 @@ class OtterLockApp extends StatelessWidget {
     return MaterialApp(
       title: 'OtterLock',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        scaffoldBackgroundColor: AppColors.background,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: AppColors.primary,
-          brightness: Brightness.light,
-          background: AppColors.background,
-        ),
-        textTheme: ThemeData.light()
-            .textTheme
-            .apply(bodyColor: AppColors.primary, displayColor: AppColors.primary),
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: Colors.white,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(20),
-            borderSide: const BorderSide(color: AppColors.primary, width: 1.4),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(20),
-            borderSide: BorderSide(color: AppColors.primary.withOpacity(0.2)),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(20),
-            borderSide: const BorderSide(color: AppColors.primary, width: 1.6),
-          ),
-        ),
-      ),
+      theme: AppTheme.lightTheme,
       home: const SplashScreen(),
     );
   }

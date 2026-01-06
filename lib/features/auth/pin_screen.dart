@@ -1,10 +1,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/services/pin_service.dart';
-import '../../shared/widgets/widgets.dart';
+import '../../shared/widgets/app_popup.dart';
+import '../../shared/widgets/keypad_button.dart';
+import '../../shared/widgets/pin_display.dart';
 import '../home/home_screen.dart';
 
 /// États possibles de l'écran PIN
@@ -24,7 +27,7 @@ class PinScreen extends StatefulWidget {
   State<PinScreen> createState() => _PinScreenState();
 }
 
-class _PinScreenState extends State<PinScreen> {
+class _PinScreenState extends State<PinScreen> with SingleTickerProviderStateMixin {
   final PinService _pinService = PinService();
   
   String _currentPin = '';
@@ -33,16 +36,30 @@ class _PinScreenState extends State<PinScreen> {
   bool _showLastChar = false;
   bool _isSubmitting = false;
   PinScreenState _state = PinScreenState.loading;
+  String? _errorMessage;
+  Timer? _errorTimer;
+  
+  late AnimationController _shakeController;
+  late Animation<double> _shakeAnimation;
 
   @override
   void initState() {
     super.initState();
+    _shakeController = AnimationController(
+      duration: const Duration(milliseconds: 500),
+      vsync: this,
+    );
+    _shakeAnimation = Tween<double>(begin: 0, end: 10).chain(
+      CurveTween(curve: Curves.easeInOut),
+    ).animate(_shakeController);
     _initializeScreen();
   }
 
   @override
   void dispose() {
     _hideTimer?.cancel();
+    _errorTimer?.cancel();
+    _shakeController.dispose();
     super.dispose();
   }
 
@@ -240,27 +257,32 @@ class _PinScreenState extends State<PinScreen> {
       
       if (!mounted) return;
       
-      // Effacer le PIN
+      // Vibrer et animer
+      await HapticFeedback.heavyImpact();
+      await _shakeController.forward();
+      await _shakeController.reverse();
+      
+      if (!mounted) return;
+      
+      // Afficher message d'erreur discret
+      _errorTimer?.cancel();
       setState(() {
         _currentPin = '';
         _showLastChar = false;
+        _errorMessage = failedAttempts >= AppConstants.maxFailedAttempts - 1
+            ? 'Code incorrect • Dernière tentative'
+            : 'Code incorrect';
+      });
+      
+      // Cacher le message après 2 secondes
+      _errorTimer = Timer(const Duration(seconds: 2), () {
+        if (mounted) setState(() => _errorMessage = null);
       });
       
       // Vérifier si on atteint le maximum de tentatives
       if (failedAttempts >= AppConstants.maxFailedAttempts) {
         setState(() => _state = PinScreenState.lockedOut);
         _showLockoutPopup();
-      } else {
-        // Afficher un message d'erreur
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Code PIN incorrect (${failedAttempts}/${AppConstants.maxFailedAttempts} tentatives)',
-            ),
-            backgroundColor: AppColors.error,
-            duration: const Duration(seconds: 2),
-          ),
-        );
       }
     }
   }
@@ -381,18 +403,51 @@ class _PinScreenState extends State<PinScreen> {
                           ),
                         ),
                         SizedBox(height: verticalGap),
-                        PinDisplay(
-                          pin: _currentPin,
-                          showLastChar: _showLastChar,
-                          compact: compactHeight,
+                        AnimatedBuilder(
+                          animation: _shakeAnimation,
+                          builder: (context, child) => Transform.translate(
+                            offset: Offset(_shakeAnimation.value * ((_currentPin.length % 2 == 0) ? 1 : -1), 0),
+                            child: child,
+                          ),
+                          child: PinDisplay(
+                            pin: _currentPin,
+                            showLastChar: _showLastChar,
+                            compact: compactHeight,
+                          ),
                         ),
-                        SizedBox(height: verticalGap),
+                        // Message d'erreur discret
+                        AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 200),
+                          child: _errorMessage != null
+                              ? Padding(
+                                  key: ValueKey(_errorMessage),
+                                  padding: const EdgeInsets.only(top: 16),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.error.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(color: AppColors.error.withOpacity(0.3)),
+                                    ),
+                                    child: Text(
+                                      _errorMessage!,
+                                      style: TextStyle(
+                                        color: AppColors.error,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                )
+                              : const SizedBox(key: ValueKey('empty'), height: 16),
+                        ),
+                        SizedBox(height: verticalGap * 0.3),
                         Flexible(
-                          fit: FlexFit.tight,
+                          fit: FlexFit.loose,
                           child: Align(
                             alignment: Alignment.bottomCenter,
                             child: Padding(
-                              padding: const EdgeInsets.only(bottom: 50),
+                              padding: const EdgeInsets.only(bottom: 24),
                               child: _buildKeypad(compactHeight),
                             ),
                           ),

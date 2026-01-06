@@ -235,9 +235,9 @@ class _SplashScreenState extends State<SplashScreen>
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,
               colors: const [
-                Colors.white,
-                Colors.white70,
-                Colors.white,
+                AppColors.white,
+                AppColors.white.withOpacity(0.7),
+                AppColors.white,
               ],
               stops: [
                 _shimmerAnimation.value - 0.3,

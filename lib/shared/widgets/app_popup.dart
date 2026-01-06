@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/theme/app_theme.dart';
 
 /// Types de popup disponibles
 enum PopupType {
@@ -9,7 +10,6 @@ enum PopupType {
 }
 
 /// Widget de popup réutilisable pour l'application
-/// Design minimaliste et moderne pour une meilleure UX
 class AppPopup extends StatelessWidget {
   final PopupType type;
   final String message;
@@ -24,7 +24,7 @@ class AppPopup extends StatelessWidget {
     required this.onButtonPressed,
   });
 
-  /// Affiche une popup de succès (PIN enregistré)
+  /// Affiche une popup de succès
   static Future<void> showSuccess(
     BuildContext context, {
     required String message,
@@ -39,7 +39,7 @@ class AppPopup extends StatelessWidget {
     );
   }
 
-  /// Affiche une popup d'erreur (PIN différent)
+  /// Affiche une popup d'erreur
   static Future<void> showError(
     BuildContext context, {
     required String message,
@@ -54,7 +54,7 @@ class AppPopup extends StatelessWidget {
     );
   }
 
-  /// Affiche une popup de verrouillage (5 tentatives échouées)
+  /// Affiche une popup de verrouillage
   static Future<void> showLockout(
     BuildContext context, {
     required String message,
@@ -82,18 +82,12 @@ class AppPopup extends StatelessWidget {
       context: context,
       barrierDismissible: barrierDismissible,
       barrierLabel: '',
-      barrierColor: Colors.black.withOpacity(0.4),
+      barrierColor: AppColors.overlay,
       transitionDuration: const Duration(milliseconds: 200),
       transitionBuilder: (context, animation, secondaryAnimation, child) {
         return ScaleTransition(
-          scale: CurvedAnimation(
-            parent: animation,
-            curve: Curves.easeOutBack,
-          ),
-          child: FadeTransition(
-            opacity: animation,
-            child: child,
-          ),
+          scale: CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
+          child: FadeTransition(opacity: animation, child: child),
         );
       },
       pageBuilder: (context, animation, secondaryAnimation) => Center(
@@ -133,64 +127,29 @@ class AppPopup extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: Container(
-        width: 300,
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Icon
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: _primaryColor.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                _icon,
-                color: _primaryColor,
-                size: 32,
-              ),
-            ),
-            const SizedBox(height: 16),
-            // Message
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.grey[800],
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
-                height: 1.4,
-              ),
-            ),
-            const SizedBox(height: 24),
-            // Button
-            _PopupButton(
-              text: buttonText,
-              color: _primaryColor,
-              onPressed: onButtonPressed,
-            ),
-          ],
-        ),
+  Widget build(BuildContext context) => Material(
+    color: Colors.transparent,
+    child: Container(
+      width: 300,
+      padding: const EdgeInsets.all(AppSizes.paddingLg),
+      decoration: AppDecorations.card(),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(color: _primaryColor.withOpacity(0.1), shape: BoxShape.circle),
+            child: Icon(_icon, color: _primaryColor, size: 32),
+          ),
+          const SizedBox(height: AppSizes.spacingMd),
+          Text(message, textAlign: TextAlign.center, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.grey800)),
+          const SizedBox(height: AppSizes.spacingLg),
+          _PopupButton(text: buttonText, color: _primaryColor, onPressed: onButtonPressed),
+        ],
       ),
-    );
-  }
+    ),
+  );
 }
 
 class _PopupButton extends StatefulWidget {
@@ -198,11 +157,7 @@ class _PopupButton extends StatefulWidget {
   final Color color;
   final VoidCallback onPressed;
 
-  const _PopupButton({
-    required this.text,
-    required this.color,
-    required this.onPressed,
-  });
+  const _PopupButton({required this.text, required this.color, required this.onPressed});
 
   @override
   State<_PopupButton> createState() => _PopupButtonState();
@@ -212,42 +167,24 @@ class _PopupButtonState extends State<_PopupButton> {
   bool _isPressed = false;
 
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _isPressed = true),
-      onTapUp: (_) {
-        setState(() => _isPressed = false);
-        widget.onPressed();
-      },
-      onTapCancel: () => setState(() => _isPressed = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        width: double.infinity,
-        height: 48,
-        decoration: BoxDecoration(
-          color: _isPressed ? widget.color.withOpacity(0.85) : widget.color,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: _isPressed
-              ? []
-              : [
-                  BoxShadow(
-                    color: widget.color.withOpacity(0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          widget.text,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.3,
-          ),
-        ),
+  Widget build(BuildContext context) => GestureDetector(
+    onTapDown: (_) => setState(() => _isPressed = true),
+    onTapUp: (_) {
+      setState(() => _isPressed = false);
+      widget.onPressed();
+    },
+    onTapCancel: () => setState(() => _isPressed = false),
+    child: AnimatedContainer(
+      duration: const Duration(milliseconds: 150),
+      width: double.infinity,
+      height: AppSizes.buttonHeightMd,
+      decoration: BoxDecoration(
+        color: _isPressed ? widget.color.withOpacity(0.85) : widget.color,
+        borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+        boxShadow: _isPressed ? [] : [BoxShadow(color: widget.color.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))],
       ),
-    );
-  }
+      alignment: Alignment.center,
+      child: Text(widget.text, style: AppTextStyles.button),
+    ),
+  );
 }

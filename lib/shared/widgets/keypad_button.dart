@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/theme/app_theme.dart';
 
 /// Bouton du clavier numérique avec effet de pression
 class KeypadButton extends StatefulWidget {
@@ -27,36 +28,31 @@ class _KeypadButtonState extends State<KeypadButton> {
   Color get _defaultColor {
     if (_isDelete) return AppColors.muted;
     if (_isSubmit) return AppColors.primary;
-    return AppColors.white;
+    return AppColors.surface;
   }
 
   Color get _pressedColor {
-    if (_isDelete) return const Color(0xFF7A7A7A);
+    if (_isDelete) return AppColors.errorPressed;
     return AppColors.primaryPressed;
   }
 
   Color get _currentColor {
-    if (!widget.enabled && _isSubmit) {
-      return AppColors.muted;
-    }
+    if (!widget.enabled && _isSubmit) return AppColors.muted;
     return _isPressed ? _pressedColor : _defaultColor;
   }
 
   Widget get _content {
     if (_isDelete) {
-      return const Icon(Icons.close, color: Colors.white, size: 28);
+      return const Icon(Icons.close, color: AppColors.textOnPrimary, size: 28);
     }
     if (_isSubmit) {
-      return const Icon(Icons.arrow_forward, color: Colors.white, size: 28);
+      return const Icon(Icons.arrow_forward, color: AppColors.textOnPrimary, size: 28);
     }
     return Text(
       widget.label,
       textAlign: TextAlign.center,
-      style: TextStyle(
-        color: _isPressed ? Colors.white : AppColors.textDark,
-        fontSize: 28,
-        fontFamily: 'Roboto',
-        fontWeight: FontWeight.w600,
+      style: AppTextStyles.h2.copyWith(
+        color: _isPressed ? AppColors.textOnPrimary : AppColors.textDark,
       ),
     );
   }
@@ -91,7 +87,7 @@ class _KeypadButtonState extends State<KeypadButton> {
           shape: BoxShape.circle,
           boxShadow: const [
             BoxShadow(
-              color: Color(0x3F000000),
+              color: AppColors.shadow,
               blurRadius: 4,
               offset: Offset(0, 4),
             )
