@@ -35,13 +35,6 @@ class _PasswordCardState extends State<PasswordCard> {
 
   void _copy(String text, String label) {
     Clipboard.setData(ClipboardData(text: text));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$label copié !'),
-        duration: const Duration(seconds: 2),
-        backgroundColor: AppColors.success,
-      ),
-    );
   }
 
   @override
