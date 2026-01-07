@@ -234,7 +234,7 @@ class _SplashScreenState extends State<SplashScreen>
             return LinearGradient(
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,
-              colors: const [
+              colors: [
                 AppColors.white,
                 AppColors.white.withOpacity(0.7),
                 AppColors.white,

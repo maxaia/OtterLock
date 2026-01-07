@@ -77,10 +77,16 @@ class _PasswordCardState extends State<PasswordCard> {
                       color: AppColors.error,
                       borderRadius: BorderRadius.circular(AppSizes.radiusSm),
                     ),
-                    child: Text(
-                      'Expiré',
-                      style: AppTextStyles.caption.copyWith(color: AppColors.textOnPrimary),
+                    child: Text('Expiré', style: AppTextStyles.caption.copyWith(color: AppColors.textOnPrimary)),
+                  )
+                else if (widget.password.isTemporary)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.warning,
+                      borderRadius: BorderRadius.circular(AppSizes.radiusSm),
                     ),
+                    child: Text('Mot de passe temporaire', style: AppTextStyles.caption.copyWith(color: AppColors.textOnPrimary)),
                   ),
               ],
             ),
@@ -102,6 +108,13 @@ class _PasswordCardState extends State<PasswordCard> {
                     style: AppTextStyles.caption.copyWith(color: AppColors.primary, decoration: TextDecoration.underline),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+                if (widget.password.isTemporary && widget.password.expirationDate != null) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    'Expire le ${widget.password.expirationDate!.day.toString().padLeft(2, '0')}/${widget.password.expirationDate!.month.toString().padLeft(2, '0')}/${widget.password.expirationDate!.year} ${widget.password.expirationDate!.hour.toString().padLeft(2, '0')}:${widget.password.expirationDate!.minute.toString().padLeft(2, '0')}',
+                    style: AppTextStyles.caption.copyWith(color: AppColors.warning),
                   ),
                 ],
                 const SizedBox(height: AppSizes.spacingSm),

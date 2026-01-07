@@ -37,6 +37,7 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _urlController = TextEditingController();
+  final _dummyFocusNode = FocusNode(); // Pour enlever le focus des champs
   
   PasswordCategory? _selectedCategory;
   bool _isTemporaryPassword = false;
@@ -66,6 +67,7 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _urlController.dispose();
+    _dummyFocusNode.dispose();
     super.dispose();
   }
 
@@ -118,21 +120,57 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
   }
 
   Future<void> _selectDate() async {
+    // Remove focus from all text fields before opening picker
+    FocusScope.of(context).unfocus();
+    await Future.delayed(const Duration(milliseconds: 50));
+    
+    if (!mounted) return;
     final date = await showDatePicker(
       context: context,
       initialDate: _expirationDate ?? DateTime.now().add(const Duration(days: 1)),
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
-    if (date != null) setState(() => _expirationDate = date);
+    
+    if (!mounted) return;
+    
+    if (date != null) {
+      setState(() => _expirationDate = date);
+    }
+    
+    // Use post-frame callback to ensure focus is removed after picker closes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        FocusScope.of(context).unfocus();
+        _dummyFocusNode.requestFocus();
+      }
+    });
   }
 
   Future<void> _selectTime() async {
+    // Remove focus from all text fields before opening picker
+    FocusScope.of(context).unfocus();
+    await Future.delayed(const Duration(milliseconds: 50));
+    
+    if (!mounted) return;
     final time = await showTimePicker(
       context: context,
       initialTime: _expirationTime ?? TimeOfDay.now(),
     );
-    if (time != null) setState(() => _expirationTime = time);
+    
+    if (!mounted) return;
+    
+    if (time != null) {
+      setState(() => _expirationTime = time);
+    }
+    
+    // Use post-frame callback to ensure focus is removed after picker closes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        FocusScope.of(context).unfocus();
+        _dummyFocusNode.requestFocus();
+      }
+    });
   }
 
   void _showTemporaryInfo() {
@@ -227,65 +265,75 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
         title: Text('Nouveau mot de passe', style: AppTextStyles.h4),
         centerTitle: true,
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSizes.paddingLg),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              AppSection(
-                label: 'Titre',
-                child: AppTextField(
-                  controller: _titleController,
-                  hintText: 'Titre',
-                  errorText: _showValidationErrors && _titleController.text.isEmpty
-                      ? 'Veuillez saisir un titre'
-                      : null,
-                ),
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: Stack(
+          children: [
+            // Invisible focus node target
+            Focus(
+              focusNode: _dummyFocusNode,
+              child: const SizedBox.shrink(),
+            ),
+            SingleChildScrollView(
+              padding: const EdgeInsets.all(AppSizes.paddingLg),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AppSection(
+                    label: 'Titre',
+                    child: AppTextField(
+                      controller: _titleController,
+                      hintText: 'Titre',
+                      errorText: _showValidationErrors && _titleController.text.isEmpty
+                          ? 'Veuillez saisir un titre'
+                          : null,
+                    ),
+                  ),
+                  const SizedBox(height: AppSizes.spacingMd),
+                  
+                  AppSection(
+                    label: 'Nom d\'utilisateur',
+                    child: AppTextField(
+                      controller: _usernameController,
+                      hintText: 'Nom d\'utilisateur',
+                      errorText: _showValidationErrors && _usernameController.text.isEmpty
+                          ? 'Veuillez saisir un nom d\'utilisateur'
+                          : null,
+                    ),
+                  ),
+                  const SizedBox(height: AppSizes.spacingMd),
+                  
+                  _buildCategoryField(),
+                  const SizedBox(height: AppSizes.spacingMd),
+                  
+                  _buildPasswordField(),
+                  const SizedBox(height: AppSizes.spacingMd),
+                  
+                  _buildConfirmPasswordField(),
+                  const SizedBox(height: AppSizes.spacingMd),
+                  
+                  AppSection(
+                    label: 'URL (optionnel)',
+                    child: AppTextField(
+                      controller: _urlController,
+                      hintText: 'https://example.com',
+                      keyboardType: TextInputType.url,
+                    ),
+                  ),
+                  const SizedBox(height: AppSizes.spacingLg),
+                  
+                  _buildTemporarySection(),
+                  const SizedBox(height: AppSizes.spacingXl),
+                  
+                  AppButton(
+                    text: 'Enregistrer',
+                    onPressed: _onSubmit,
+                    isLoading: _isSaving,
+                  ),
+                ],
               ),
-              const SizedBox(height: AppSizes.spacingMd),
-              
-              AppSection(
-                label: 'Nom d\'utilisateur',
-                child: AppTextField(
-                  controller: _usernameController,
-                  hintText: 'Nom d\'utilisateur',
-                  errorText: _showValidationErrors && _usernameController.text.isEmpty
-                      ? 'Veuillez saisir un nom d\'utilisateur'
-                      : null,
-                ),
-              ),
-              const SizedBox(height: AppSizes.spacingMd),
-              
-              _buildCategoryField(),
-              const SizedBox(height: AppSizes.spacingMd),
-              
-              _buildPasswordField(),
-              const SizedBox(height: AppSizes.spacingMd),
-              
-              _buildConfirmPasswordField(),
-              const SizedBox(height: AppSizes.spacingMd),
-              
-              AppSection(
-                label: 'URL (optionnel)',
-                child: AppTextField(
-                  controller: _urlController,
-                  hintText: 'https://example.com',
-                  keyboardType: TextInputType.url,
-                ),
-              ),
-              const SizedBox(height: AppSizes.spacingLg),
-              
-              _buildTemporarySection(),
-              const SizedBox(height: AppSizes.spacingXl),
-              
-              AppButton(
-                text: 'Enregistrer',
-                onPressed: _onSubmit,
-                isLoading: _isSaving,
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

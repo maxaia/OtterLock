@@ -10,7 +10,7 @@ enum PopupType {
 }
 
 /// Widget de popup réutilisable pour l'application
-class AppPopup extends StatelessWidget {
+class AppPopup extends StatefulWidget {
   final PopupType type;
   final String message;
   final String buttonText;
@@ -104,8 +104,16 @@ class AppPopup extends StatelessWidget {
     );
   }
 
+  @override
+  State<AppPopup> createState() => _AppPopupState();
+}
+
+class _AppPopupState extends State<AppPopup> with SingleTickerProviderStateMixin {
+  late final AnimationController _iconController;
+  late final Animation<double> _iconScale;
+
   Color get _primaryColor {
-    switch (type) {
+    switch (widget.type) {
       case PopupType.success:
         return AppColors.primary;
       case PopupType.error:
@@ -116,7 +124,7 @@ class AppPopup extends StatelessWidget {
   }
 
   IconData get _icon {
-    switch (type) {
+    switch (widget.type) {
       case PopupType.success:
         return Icons.check_circle_rounded;
       case PopupType.error:
@@ -124,6 +132,25 @@ class AppPopup extends StatelessWidget {
       case PopupType.lockout:
         return Icons.lock_clock_rounded;
     }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _iconController = AnimationController(vsync: this, duration: const Duration(milliseconds: 800));
+    _iconScale = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.3).chain(CurveTween(curve: Curves.easeOutBack)), weight: 65),
+      TweenSequenceItem(tween: Tween(begin: 1.3, end: 0.95).chain(CurveTween(curve: Curves.easeInOut)), weight: 20),
+      TweenSequenceItem(tween: Tween(begin: 0.95, end: 1.0).chain(CurveTween(curve: Curves.easeOut)), weight: 15),
+    ]).animate(_iconController);
+    // lancer l'animation uniquement pour le succès
+    if (widget.type == PopupType.success) _iconController.forward();
+  }
+
+  @override
+  void dispose() {
+    _iconController.dispose();
+    super.dispose();
   }
 
   @override
@@ -136,16 +163,19 @@ class AppPopup extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(color: _primaryColor.withOpacity(0.1), shape: BoxShape.circle),
-            child: Icon(_icon, color: _primaryColor, size: 32),
+          ScaleTransition(
+            scale: _iconScale,
+            child: Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(color: _primaryColor.withOpacity(0.1), shape: BoxShape.circle),
+              child: Icon(_icon, color: _primaryColor, size: 32),
+            ),
           ),
           const SizedBox(height: AppSizes.spacingMd),
-          Text(message, textAlign: TextAlign.center, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.grey800)),
+          Text(widget.message, textAlign: TextAlign.center, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.grey800)),
           const SizedBox(height: AppSizes.spacingLg),
-          _PopupButton(text: buttonText, color: _primaryColor, onPressed: onButtonPressed),
+          _PopupButton(text: widget.buttonText, color: _primaryColor, onPressed: widget.onButtonPressed),
         ],
       ),
     ),

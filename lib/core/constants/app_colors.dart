@@ -59,5 +59,5 @@ class AppColors {
   
   // Alias pour compatibilité
   static const Color muted = grey500;
-  static const Color white = surface;
+  
 }

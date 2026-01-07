@@ -15,15 +15,21 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
   final DatabaseService _databaseService = DatabaseService();
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocus = FocusNode();
+  
+  // Cache RegExp pour optimiser les performances
+  static final RegExp _urlProtocolRegex = RegExp(r'https?://(www\.)?');
   
   String _selectedCategory = 'Tous';
   List<PasswordModel> _allPasswords = [];
   List<PasswordModel> _filteredPasswords = [];
   Map<String, int> _categoryCounts = {};
   bool _isLoading = true;
+  late AnimationController _fabController;
+  late Animation<double> _fabAnimation;
 
   final List<Map<String, dynamic>> _categories = [
     {'label': 'Tous', 'icon': Icons.apps_rounded},
@@ -39,10 +45,14 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _loadPasswords();
     _searchController.addListener(_onSearchChanged);
+    _fabController = AnimationController(vsync: this, duration: const Duration(milliseconds: 200));
+    _fabAnimation = Tween<double>(begin: 0.0, end: 0.125).animate(CurvedAnimation(parent: _fabController, curve: Curves.easeInOut));
   }
 
   @override
   void dispose() {
+    _fabController.dispose();
+    _searchFocus.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -91,10 +101,18 @@ class _HomeScreenState extends State<HomeScreen> {
                                 password.category == _selectedCategory;
         
         // Filtrer par recherche
+        final title = password.title.toLowerCase();
+        final username = password.username.toLowerCase();
+        final category = password.category.toLowerCase();
+        final url = password.url.toLowerCase();
+        final urlHost = url.replaceAll(_urlProtocolRegex, '');
+
         final matchesSearch = query.isEmpty ||
-                             password.title.toLowerCase().contains(query) ||
-                             password.username.toLowerCase().contains(query) ||
-                             password.category.toLowerCase().contains(query);
+            title.contains(query) ||
+            username.contains(query) ||
+            category.contains(query) ||
+            url.contains(query) ||
+            urlHost.contains(query);
         
         return matchesCategory && matchesSearch;
       }).toList();
@@ -110,27 +128,28 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _onAddPassword() async {
     if (!mounted) return;
-    
+    // petite animation avant navigation
+    await _fabController.forward();
+    await _fabController.reverse();
+
     final result = await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => const AddPasswordScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const AddPasswordScreen()),
     );
-    
     // Recharger les données si un mot de passe a été ajouté
-    if (result == true) {
-      await _loadPasswords();
-    }
+    if (result == true) await _loadPasswords();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      floatingActionButton: FloatingActionButton(
-        onPressed: _onAddPassword,
-        backgroundColor: AppColors.primary,
-        child: const Icon(Icons.add, size: 32, color: AppColors.textOnPrimary),
+      floatingActionButton: RotationTransition(
+        turns: _fabAnimation,
+        child: FloatingActionButton(
+          onPressed: _onAddPassword,
+          backgroundColor: AppColors.primary,
+          child: const Icon(Icons.add, size: 32, color: AppColors.textOnPrimary),
+        ),
       ),
       body: SafeArea(
         top: false,
@@ -178,7 +197,7 @@ class _HomeScreenState extends State<HomeScreen> {
         bottom: AppSizes.paddingMd,
       ),
       color: AppColors.primary,
-      child: Container(
+            child: Container(
         height: 48,
         decoration: BoxDecoration(
           color: AppColors.surface,
@@ -193,13 +212,16 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             Expanded(
               child: TextField(
+                focusNode: _searchFocus,
                 controller: _searchController,
                 cursorColor: AppColors.primary,
                 style: AppTextStyles.bodyMedium,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   hintText: 'Rechercher un mot de passe...',
                   border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(horizontal: 10),
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 10),
                   isDense: true,
                 ),
               ),
@@ -218,15 +240,15 @@ class _HomeScreenState extends State<HomeScreen> {
         crossAxisCount: 2,
         crossAxisSpacing: AppSizes.spacingMd,
         mainAxisSpacing: AppSizes.spacingMd,
-        childAspectRatio: 1.6,
+        childAspectRatio: 1.25,
       ),
       itemCount: _categories.length,
       itemBuilder: (context, index) {
         final category = _categories[index];
         final label = category['label'] as String;
-        final count = label == 'Tous' 
-            ? _allPasswords.length 
-            : (_categoryCounts[label] ?? 0);
+        final count = label == 'Tous'
+          ? _allPasswords.length
+          : (_categoryCounts[label] ?? 0);
         
         return CategoryCard(
           label: label,
@@ -293,6 +315,7 @@ class _HomeScreenState extends State<HomeScreen> {
           itemBuilder: (context, index) {
             final password = _filteredPasswords[index];
             return PasswordCard(
+              key: ValueKey(password.id),
               password: password,
               onTap: () {
                 // TODO: Naviguer vers l'écran de détails/édition
