@@ -8,19 +8,7 @@ import '../../core/services/database_service.dart';
 import '../../shared/widgets/common_widgets.dart';
 import '../../shared/widgets/dialogs.dart';
 import '../../shared/widgets/app_popup.dart';
-
-/// Catégories de mots de passe
-enum PasswordCategory {
-  email('E-mail', Icons.email_outlined),
-  work('Travail', Icons.work_outline),
-  social('Réseaux', Icons.people_outline),
-  bank('Banque', Icons.account_balance_outlined),
-  other('Autre', Icons.more_horiz);
-
-  final String label;
-  final IconData icon;
-  const PasswordCategory(this.label, this.icon);
-}
+import '../../shared/widgets/password_form_helpers.dart';
 
 /// Écran d'ajout d'un nouveau mot de passe
 class AddPasswordScreen extends StatefulWidget {
@@ -37,7 +25,7 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _urlController = TextEditingController();
-  final _dummyFocusNode = FocusNode(); // Pour enlever le focus des champs
+  final _dummyFocusNode = FocusNode();
   
   PasswordCategory? _selectedCategory;
   bool _isTemporaryPassword = false;
@@ -48,6 +36,7 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
   bool _showCategoryDropdown = false;
   bool _showValidationErrors = false;
   bool _isSaving = false;
+  String? _expirationDateTimeError;
   
   String? _passwordStrength;
   Color _passwordStrengthColor = AppColors.muted;
@@ -110,6 +99,31 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
       _passwordController.text == _confirmPasswordController.text);
   }
 
+  void _validateExpirationDateTime() {
+    if (!_isTemporaryPassword || _expirationDate == null || _expirationTime == null) {
+      setState(() => _expirationDateTimeError = null);
+      return;
+    }
+
+    final expirationDateTime = DateTime(
+      _expirationDate!.year,
+      _expirationDate!.month,
+      _expirationDate!.day,
+      _expirationTime!.hour,
+      _expirationTime!.minute,
+    );
+
+    final now = DateTime.now();
+    final fiveMinutesFromNow = now.add(const Duration(minutes: 5));
+
+    if (expirationDateTime.isBefore(fiveMinutesFromNow)) {
+      setState(() => _expirationDateTimeError = 
+        'La date et l\'heure doivent être au moins 5 minutes dans le futur');
+    } else {
+      setState(() => _expirationDateTimeError = null);
+    }
+  }
+
   void _onGeneratePassword() {
     const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#\$%^&*()_-+=<>?';
     final random = Random.secure();
@@ -136,6 +150,7 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
     
     if (date != null) {
       setState(() => _expirationDate = date);
+      _validateExpirationDateTime();
     }
     
     // Use post-frame callback to ensure focus is removed after picker closes
@@ -162,6 +177,7 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
     
     if (time != null) {
       setState(() => _expirationTime = time);
+      _validateExpirationDateTime();
     }
     
     // Use post-frame callback to ensure focus is removed after picker closes
@@ -190,11 +206,12 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
         _selectedCategory != null &&
         _passwordController.text.isNotEmpty &&
         _passwordsMatch &&
-        (!_isTemporaryPassword || (_expirationDate != null && _expirationTime != null));
+        (!_isTemporaryPassword || (_expirationDate != null && _expirationTime != null && _expirationDateTimeError == null));
   }
 
   Future<void> _onSubmit() async {
     setState(() => _showValidationErrors = true);
+    _validateExpirationDateTime();
     
     if (!_isFormValid || _isSaving) return;
     
@@ -551,6 +568,7 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
                   if (!value) {
                     _expirationDate = null;
                     _expirationTime = null;
+                    _expirationDateTimeError = null;
                   }
                 }),
                 activeColor: AppColors.primary,
@@ -596,6 +614,23 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
                   Flexible(
                     child: Text(
                       'Veuillez définir une date et une heure d\'expiration',
+                      style: AppTextStyles.caption.copyWith(color: AppColors.error),
+                      overflow: TextOverflow.visible,
+                      softWrap: true,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            if (_expirationDateTimeError != null) ...[
+              const SizedBox(height: AppSizes.spacingSm),
+              Row(
+                children: [
+                  const Icon(Icons.error_outline, size: 14, color: AppColors.error),
+                  const SizedBox(width: AppSizes.spacingXs),
+                  Flexible(
+                    child: Text(
+                      _expirationDateTimeError!,
                       style: AppTextStyles.caption.copyWith(color: AppColors.error),
                       overflow: TextOverflow.visible,
                       softWrap: true,

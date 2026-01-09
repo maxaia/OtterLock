@@ -5,7 +5,9 @@ import '../../core/models/password_model.dart';
 import '../../core/services/database_service.dart';
 import '../../shared/widgets/category_card.dart';
 import '../../shared/widgets/password_card.dart';
+import '../../shared/widgets/app_popup.dart';
 import '../password/add_password_screen.dart';
+import '../password/edit_password_screen.dart';
 
 /// Écran principal affichant les catégories et mots de passe
 class HomeScreen extends StatefulWidget {
@@ -19,8 +21,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   final DatabaseService _databaseService = DatabaseService();
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocus = FocusNode();
-  
-  // Cache RegExp pour optimiser les performances
   static final RegExp _urlProtocolRegex = RegExp(r'https?://(www\.)?');
   
   String _selectedCategory = 'Tous';
@@ -61,10 +61,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     setState(() => _isLoading = true);
     
     try {
-      // Supprimer les mots de passe expirés
       await _databaseService.deleteExpiredPasswords();
-      
-      // Charger tous les mots de passe
       final passwords = await _databaseService.getAllPasswords();
       final counts = await _databaseService.getPasswordCountByCategory();
       
@@ -128,14 +125,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   Future<void> _onAddPassword() async {
     if (!mounted) return;
-    // petite animation avant navigation
     await _fabController.forward();
     await _fabController.reverse();
 
     final result = await Navigator.of(context).push(
       MaterialPageRoute(builder: (context) => const AddPasswordScreen()),
     );
-    // Recharger les données si un mot de passe a été ajouté
     if (result == true) await _loadPasswords();
   }
 
@@ -317,24 +312,42 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             return PasswordCard(
               key: ValueKey(password.id),
               password: password,
-              onTap: () {
-                // TODO: Naviguer vers l'écran de détails/édition
+              onTap: () async {
+                final result = await Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => EditPasswordScreen(
+                      password: password,
+                      initialEditMode: true,
+                    ),
+                  ),
+                );
+                if (result == true) await _loadPasswords();
               },
               onDelete: () async {
                 final confirmed = await showDialog<bool>(
                   context: context,
+                  barrierDismissible: false,
                   builder: (context) => AlertDialog(
-                    title: const Text('Supprimer'),
-                    content: Text('Voulez-vous supprimer "${password.title}" ?'),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppSizes.radiusLg),
+                    ),
+                    title: const Text('Supprimer ce mot de passe ?'),
+                    content: Text(
+                      'Êtes-vous sûr de vouloir supprimer "${password.title}" ?\n\nCette action est irréversible.',
+                      style: AppTextStyles.bodyMedium,
+                    ),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.pop(context, false),
-                        child: const Text('Annuler'),
+                        child: Text('Annuler', style: AppTextStyles.button.copyWith(color: AppColors.textSecondary)),
                       ),
                       TextButton(
                         onPressed: () => Navigator.pop(context, true),
-                        style: TextButton.styleFrom(foregroundColor: AppColors.error),
-                        child: const Text('Supprimer'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppColors.error,
+                          backgroundColor: AppColors.error.withOpacity(0.1),
+                        ),
+                        child: Text('Supprimer', style: AppTextStyles.button.copyWith(color: AppColors.error)),
                       ),
                     ],
                   ),
@@ -342,14 +355,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 
                 if (confirmed == true && password.id != null) {
                   await _databaseService.deletePassword(password.id!);
-                  await _loadPasswords();
                   
                   if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Mot de passe supprimé'),
-                        backgroundColor: AppColors.success,
-                      ),
+                    await AppPopup.showSuccess(
+                      context,
+                      message: 'Mot de passe supprimé avec succès !',
+                      onContinue: () async {
+                        await _loadPasswords();
+                      },
                     );
                   }
                 }

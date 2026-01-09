@@ -58,29 +58,53 @@ class _PasswordCardState extends State<PasswordCard> {
                 Icon(_categoryIcon, color: AppColors.textOnPrimary, size: 20),
                 const SizedBox(width: AppSizes.spacingSm),
                 Expanded(
-                  child: Text(
-                    widget.password.category,
-                    style: AppTextStyles.label.copyWith(color: AppColors.textOnPrimary),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.password.category,
+                        style: AppTextStyles.label.copyWith(color: AppColors.textOnPrimary),
+                      ),
+                      if (widget.password.isExpired || widget.password.isTemporary) ...[
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Icon(
+                              widget.password.isExpired ? Icons.warning_amber : Icons.schedule,
+                              size: 12,
+                              color: AppColors.textOnPrimary,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              widget.password.isExpired ? 'Expiré' : 'Temporaire',
+                              style: AppTextStyles.caption.copyWith(
+                                color: AppColors.textOnPrimary,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
                   ),
                 ),
-                if (widget.password.isExpired)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: AppColors.error,
-                      borderRadius: BorderRadius.circular(AppSizes.radiusSm),
-                    ),
-                    child: Text('Expiré', style: AppTextStyles.caption.copyWith(color: AppColors.textOnPrimary)),
-                  )
-                else if (widget.password.isTemporary)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: AppColors.warning,
-                      borderRadius: BorderRadius.circular(AppSizes.radiusSm),
-                    ),
-                    child: Text('Mot de passe temporaire', style: AppTextStyles.caption.copyWith(color: AppColors.textOnPrimary)),
-                  ),
+                IconButton(
+                  icon: const Icon(Icons.edit, size: 18, color: AppColors.textOnPrimary),
+                  onPressed: widget.onTap,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  visualDensity: VisualDensity.compact,
+                  tooltip: 'Éditer',
+                ),
+                const SizedBox(width: 4),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, size: 18, color: AppColors.textOnPrimary),
+                  onPressed: widget.onDelete != null ? () => widget.onDelete!() : null,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  visualDensity: VisualDensity.compact,
+                  tooltip: 'Supprimer',
+                ),
               ],
             ),
           ),
