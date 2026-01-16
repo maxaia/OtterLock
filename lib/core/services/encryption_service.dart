@@ -5,11 +5,11 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 /// Service d'encryption AES-256 simple et fiable
 class EncryptionService {
-  static final EncryptionService _instance = EncryptionService._internal();
+  EncryptionService._();
+  static final EncryptionService _instance = EncryptionService._();
   factory EncryptionService() => _instance;
-  EncryptionService._internal();
 
-  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
+  static const FlutterSecureStorage _secureStorage = FlutterSecureStorage();
   static const String _keyStorageKey = 'encryption_master_key_v3';
   
   String? _masterKey;
@@ -32,8 +32,8 @@ class EncryptionService {
       }
       
       _isInitialized = true;
-    } catch (e) {
-      throw Exception('Erreur d\'initialisation de l\'encryption: $e');
+    } catch (_) {
+      throw Exception('Erreur d\'initialisation de l\'encryption');
     }
   }
 
@@ -70,8 +70,8 @@ class EncryptionService {
       
       // Retourner: salt + encrypted (séparés par :)
       return '$saltBase64:${base64Encode(encrypted)}';
-    } catch (e) {
-      throw Exception('Erreur de cryptage: $e');
+    } catch (_) {
+      throw Exception('Erreur de cryptage');
     }
   }
 
@@ -103,8 +103,8 @@ class EncryptionService {
       }
       
       return utf8.decode(decrypted);
-    } catch (e) {
-      throw Exception('Erreur de décryptage: $e');
+    } catch (_) {
+      throw Exception('Erreur de décryptage');
     }
   }
 

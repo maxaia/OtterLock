@@ -211,7 +211,7 @@ class _SplashScreenState extends State<SplashScreen>
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
+            color: Colors.black.withValues(alpha: 0.2),
             blurRadius: 30,
             offset: const Offset(0, 10),
           ),
@@ -236,7 +236,7 @@ class _SplashScreenState extends State<SplashScreen>
               end: Alignment.centerRight,
               colors: [
                 AppColors.white,
-                AppColors.white.withOpacity(0.7),
+                AppColors.white.withValues(alpha: 0.7),
                 AppColors.white,
               ],
               stops: [
@@ -285,7 +285,7 @@ class _SplashScreenState extends State<SplashScreen>
           child: CircularProgressIndicator(
             strokeWidth: 2.5,
             valueColor: AlwaysStoppedAnimation<Color>(
-              Colors.white.withOpacity(0.8),
+              Colors.white.withValues(alpha: 0.8),
             ),
           ),
         ),
@@ -293,7 +293,7 @@ class _SplashScreenState extends State<SplashScreen>
         Text(
           'Chargement...',
           style: TextStyle(
-            color: Colors.white.withOpacity(0.7),
+            color: Colors.white.withValues(alpha: 0.7),
             fontSize: 14,
             fontWeight: FontWeight.w400,
             letterSpacing: 0.5,

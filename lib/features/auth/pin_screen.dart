@@ -322,14 +322,16 @@ class _PinScreenState extends State<PinScreen> with SingleTickerProviderStateMix
   @override
   Widget build(BuildContext context) {
     if (_state == PinScreenState.loading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+      return Scaffold(
+        backgroundColor: AppColors.background(context),
+        body: const Center(child: CircularProgressIndicator()),
       );
     }
 
     final bool showBackArrow = _state == PinScreenState.confirmPin;
 
     return Scaffold(
+      backgroundColor: AppColors.background(context),
       resizeToAvoidBottomInset: true,
       body: SafeArea(
         child: LayoutBuilder(
@@ -355,7 +357,7 @@ class _PinScreenState extends State<PinScreen> with SingleTickerProviderStateMix
                           size: 24,
                         ),
                         style: IconButton.styleFrom(
-                          backgroundColor: Colors.white,
+                          backgroundColor: AppColors.cardBackground(context),
                           padding: const EdgeInsets.all(12),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -387,7 +389,7 @@ class _PinScreenState extends State<PinScreen> with SingleTickerProviderStateMix
                               Shadow(
                                 offset: const Offset(0, 2),
                                 blurRadius: 6,
-                                color: Colors.black.withOpacity(0.15),
+                                color: Colors.black.withValues(alpha: 0.15),
                               ),
                             ],
                           ),
@@ -397,7 +399,7 @@ class _PinScreenState extends State<PinScreen> with SingleTickerProviderStateMix
                           _subtitle,
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            color: AppColors.primary.withOpacity(0.85),
+                            color: AppColors.textSecondary(context),
                             fontWeight: FontWeight.w500,
                             fontSize: compactHeight ? 15 : 18,
                           ),
@@ -425,13 +427,13 @@ class _PinScreenState extends State<PinScreen> with SingleTickerProviderStateMix
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                     decoration: BoxDecoration(
-                                      color: AppColors.error.withOpacity(0.1),
+                                      color: AppColors.error.withValues(alpha: 0.1),
                                       borderRadius: BorderRadius.circular(20),
-                                      border: Border.all(color: AppColors.error.withOpacity(0.3)),
+                                      border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
                                     ),
                                     child: Text(
                                       _errorMessage!,
-                                      style: TextStyle(
+                                      style: const TextStyle(
                                         color: AppColors.error,
                                         fontSize: 13,
                                         fontWeight: FontWeight.w500,

@@ -5,9 +5,9 @@ import 'encryption_service.dart';
 
 /// Service de gestion de la base de données SQLite
 class DatabaseService {
-  static final DatabaseService _instance = DatabaseService._internal();
+  DatabaseService._();
+  static final DatabaseService _instance = DatabaseService._();
   factory DatabaseService() => _instance;
-  DatabaseService._internal();
 
   static Database? _database;
   final EncryptionService _encryptionService = EncryptionService();
@@ -32,7 +32,7 @@ class DatabaseService {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -50,7 +50,8 @@ class DatabaseService {
         category TEXT NOT NULL,
         createdAt TEXT NOT NULL,
         expirationDate TEXT,
-        isTemporary INTEGER NOT NULL DEFAULT 0
+        isTemporary INTEGER NOT NULL DEFAULT 0,
+        leakCount INTEGER NOT NULL DEFAULT -1
       )
     ''');
 
@@ -61,7 +62,10 @@ class DatabaseService {
 
   /// Met à jour la structure de la base de données
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    // Gérer les migrations futures
+    // Migration de la version 1 à 2 : ajout du champ leakCount
+    if (oldVersion < 2) {
+      await db.execute('ALTER TABLE passwords ADD COLUMN leakCount INTEGER NOT NULL DEFAULT -1');
+    }
   }
 
   /// Ajoute un nouveau mot de passe

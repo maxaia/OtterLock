@@ -5,6 +5,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/models/password_model.dart';
 import '../../core/services/database_service.dart';
+import '../../core/services/password_breach_service.dart';
 import '../../shared/widgets/common_widgets.dart';
 import '../../shared/widgets/dialogs.dart';
 import '../../shared/widgets/app_popup.dart';
@@ -249,6 +250,12 @@ class _EditPasswordScreenState extends State<EditPasswordScreen> {
         );
       }
       
+      // Vérifier si le mot de passe a changé pour re-vérifier les fuites
+      int leakCount = widget.password.leakCount;
+      if (_passwordController.text != widget.password.password) {
+        leakCount = await PasswordBreachService.checkPasswordLeak(_passwordController.text);
+      }
+      
       // Mettre à jour le modèle avec les nouvelles données
       final updatedPassword = widget.password.copyWith(
         title: _titleController.text.trim(),
@@ -258,19 +265,25 @@ class _EditPasswordScreenState extends State<EditPasswordScreen> {
         url: _urlController.text.trim(),
         isTemporary: _isTemporaryPassword,
         expirationDate: fullExpirationDate,
+        leakCount: leakCount,
       );
       
       await _databaseService.updatePassword(updatedPassword);
       
       if (!mounted) return;
       
-      await AppPopup.showSuccess(
-        context,
-        message: 'Mot de passe modifié avec succès !',
-        onContinue: () {
-          Navigator.of(context).pop(true);
-        },
-      );
+      // Afficher un avertissement si le mot de passe est compromis
+      if (leakCount > 0 && _passwordController.text != widget.password.password) {
+        await _showLeakWarningDialog(leakCount);
+      } else {
+        await AppPopup.showSuccess(
+          context,
+          message: 'Mot de passe modifié avec succès !',
+          onContinue: () {
+            Navigator.of(context).pop(true);
+          },
+        );
+      }
     } catch (e) {
       setState(() => _isSaving = false);
       
@@ -284,6 +297,60 @@ class _EditPasswordScreenState extends State<EditPasswordScreen> {
         },
       );
     }
+  }
+  
+  /// Affiche un avertissement si le mot de passe est compromis
+  Future<void> _showLeakWarningDialog(int leakCount) async {
+    final formatted = PasswordBreachService.formatLeakCount(leakCount);
+    
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.cardBackground(ctx),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            const Icon(Icons.warning_amber_rounded, color: AppColors.warning, size: 32),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Attention !',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary(ctx),
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Le mot de passe a été modifié, mais il est apparu dans $formatted.',
+              style: TextStyle(fontSize: 14, color: AppColors.textPrimary(ctx)),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Il est fortement recommandé d\'en choisir un autre.',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary(ctx)),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              Navigator.pop(context, true);
+            },
+            child: const Text('Je comprends'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _onDelete() async {
@@ -339,7 +406,7 @@ class _EditPasswordScreenState extends State<EditPasswordScreen> {
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
-        backgroundColor: AppColors.background,
+        backgroundColor: AppColors.background(context),
         appBar: AppBar(
           backgroundColor: AppColors.primary,
           foregroundColor: AppColors.textOnPrimary,
@@ -350,18 +417,7 @@ class _EditPasswordScreenState extends State<EditPasswordScreen> {
           ),
           title: Text(_isEditMode ? 'Modifier le mot de passe' : 'Détails du mot de passe', style: const TextStyle(fontSize: 18)),
           actions: [
-            if (_isEditMode)
-              TextButton(
-                onPressed: () {
-                  setState(() {
-                    _isEditMode = false;
-                    _initializeFormData();
-                    _showValidationErrors = false;
-                  });
-                },
-                child: const Text('Annuler', style: TextStyle(color: AppColors.textOnPrimary)),
-              )
-            else
+            if (!_isEditMode)
               IconButton(
                 icon: const Icon(Icons.edit),
                 onPressed: () => setState(() => _isEditMode = true),
@@ -472,10 +528,10 @@ class _EditPasswordScreenState extends State<EditPasswordScreen> {
             Row(
               children: [
                 const SizedBox(width: 36),
-                Text('Force: ', style: AppTextStyles.caption),
+                Text('Force: ', style: AppTextStyles.caption()),
                 Text(
                   _passwordStrength!,
-                  style: AppTextStyles.caption.copyWith(
+                  style: AppTextStyles.caption().copyWith(
                     color: _passwordStrengthColor,
                     fontWeight: FontWeight.bold,
                   ),
@@ -513,7 +569,7 @@ class _EditPasswordScreenState extends State<EditPasswordScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
               decoration: BoxDecoration(
-                color: _showCategoryDropdown ? AppColors.grey50 : Colors.transparent,
+                color: _showCategoryDropdown ? (AppColors.isDark(context) ? AppColors.grey800 : AppColors.grey50) : Colors.transparent,
                 borderRadius: BorderRadius.circular(AppSizes.radiusSm),
               ),
               child: Row(
@@ -527,12 +583,15 @@ class _EditPasswordScreenState extends State<EditPasswordScreen> {
                   Expanded(
                     child: Text(
                       _selectedCategory?.label ?? 'Sélectionner une catégorie',
-                      style: AppTextStyles.bodyMedium,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppColors.textPrimary(context),
+                      ),
                     ),
                   ),
                   Icon(
                     _showCategoryDropdown ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                    color: AppColors.textSecondary,
+                    color: AppColors.textSecondary(context),
                   ),
                 ],
               ),
@@ -549,15 +608,15 @@ class _EditPasswordScreenState extends State<EditPasswordScreen> {
                 }),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  color: isSelected ? AppColors.grey50 : Colors.transparent,
+                  color: isSelected ? (AppColors.isDark(context) ? AppColors.grey800 : AppColors.grey50) : Colors.transparent,
                   child: Row(
                     children: [
-                      Icon(category.icon, size: 18, color: isSelected ? AppColors.primary : AppColors.textSecondary),
+                      Icon(category.icon, size: 18, color: isSelected ? AppColors.primary : AppColors.textSecondary(context)),
                       const SizedBox(width: 12),
                       Text(
                         category.label,
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: isSelected ? AppColors.primary : AppColors.textPrimary,
+                        style: AppTextStyles.bodyMedium().copyWith(
+                          color: isSelected ? AppColors.primary : AppColors.textPrimary(context),
                           fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                         ),
                       ),
@@ -575,7 +634,7 @@ class _EditPasswordScreenState extends State<EditPasswordScreen> {
                 children: [
                   const Icon(Icons.error_outline, size: 14, color: AppColors.error),
                   const SizedBox(width: 4),
-                  Text('Veuillez sélectionner une catégorie', style: AppTextStyles.caption.copyWith(color: AppColors.error)),
+                  Text('Veuillez sélectionner une catégorie', style: AppTextStyles.caption().copyWith(color: AppColors.error)),
                 ],
               ),
             ),
@@ -586,9 +645,13 @@ class _EditPasswordScreenState extends State<EditPasswordScreen> {
   }
 
   Widget _buildTemporarySection() {
-    return AppCard(
-      withShadow: false,
-      color: AppColors.grey50,
+    return Container(
+      padding: const EdgeInsets.all(AppSizes.paddingMd),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground(context),
+        borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+        border: Border.all(color: AppColors.border(context)),
+      ),
       child: Column(
         children: [
           Row(
@@ -596,7 +659,11 @@ class _EditPasswordScreenState extends State<EditPasswordScreen> {
               Flexible(
                 child: Text(
                   'Mot de passe temporaire',
-                  style: AppTextStyles.label,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary(context),
+                  ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -618,23 +685,15 @@ class _EditPasswordScreenState extends State<EditPasswordScreen> {
                     _expirationDateTimeError = null;
                   }
                 }) : null,
-                thumbColor: WidgetStateProperty.resolveWith((states) {
-                  if (states.contains(WidgetState.selected)) {
-                    return AppColors.surface;
-                  }
-                  return AppColors.grey400;
-                }),
-                trackColor: WidgetStateProperty.resolveWith((states) {
-                  if (states.contains(WidgetState.selected)) {
-                    return AppColors.primary;
-                  }
-                  return AppColors.grey200;
-                }),
+                activeThumbColor: AppColors.primary,
+                activeTrackColor: AppColors.primary.withValues(alpha: 0.4),
+                inactiveThumbColor: AppColors.grey400,
+                inactiveTrackColor: AppColors.isDark(context) ? AppColors.grey700 : AppColors.grey300,
               ),
             ],
           ),
           if (_isTemporaryPassword) ...[
-            const AppDivider(),
+            Divider(color: AppColors.border(context), height: 24),
             const SizedBox(height: AppSizes.spacingMd),
             Row(
               children: [
@@ -672,7 +731,7 @@ class _EditPasswordScreenState extends State<EditPasswordScreen> {
                   Flexible(
                     child: Text(
                       'Veuillez définir une date et une heure d\'expiration',
-                      style: AppTextStyles.caption.copyWith(color: AppColors.error),
+                      style: AppTextStyles.caption().copyWith(color: AppColors.error),
                       overflow: TextOverflow.visible,
                       softWrap: true,
                     ),
@@ -689,7 +748,7 @@ class _EditPasswordScreenState extends State<EditPasswordScreen> {
                   Flexible(
                     child: Text(
                       _expirationDateTimeError!,
-                      style: AppTextStyles.caption.copyWith(color: AppColors.error),
+                      style: AppTextStyles.caption().copyWith(color: AppColors.error),
                       overflow: TextOverflow.visible,
                       softWrap: true,
                     ),

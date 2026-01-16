@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
-import '../../core/theme/app_theme.dart';
 
 /// Bouton du clavier numérique avec effet de pression
 class KeypadButton extends StatefulWidget {
@@ -25,23 +24,23 @@ class _KeypadButtonState extends State<KeypadButton> {
   bool get _isDelete => widget.label == '←';
   bool get _isSubmit => widget.label == '→';
 
-  Color get _defaultColor {
+  Color _defaultColor(BuildContext context) {
     if (_isDelete) return AppColors.muted;
     if (_isSubmit) return AppColors.primary;
-    return AppColors.surface;
+    return AppColors.cardBackground(context);
   }
 
   Color get _pressedColor {
-    if (_isDelete) return AppColors.errorPressed;
+    if (_isDelete) return AppColors.grey600;
     return AppColors.primaryPressed;
   }
 
-  Color get _currentColor {
+  Color _currentColor(BuildContext context) {
     if (!widget.enabled && _isSubmit) return AppColors.muted;
-    return _isPressed ? _pressedColor : _defaultColor;
+    return _isPressed ? _pressedColor : _defaultColor(context);
   }
 
-  Widget get _content {
+  Widget _content(BuildContext context) {
     if (_isDelete) {
       return const Icon(Icons.close, color: AppColors.textOnPrimary, size: 28);
     }
@@ -51,8 +50,10 @@ class _KeypadButtonState extends State<KeypadButton> {
     return Text(
       widget.label,
       textAlign: TextAlign.center,
-      style: AppTextStyles.h2.copyWith(
-        color: _isPressed ? AppColors.textOnPrimary : AppColors.textDark,
+      style: TextStyle(
+        fontSize: 24,
+        fontWeight: FontWeight.bold,
+        color: _isPressed ? AppColors.textOnPrimary : AppColors.textPrimary(context),
       ),
     );
   }
@@ -83,18 +84,20 @@ class _KeypadButtonState extends State<KeypadButton> {
         width: 72,
         height: 72,
         decoration: BoxDecoration(
-          color: _currentColor,
+          color: _currentColor(context),
           shape: BoxShape.circle,
-          boxShadow: const [
+          boxShadow: [
             BoxShadow(
-              color: AppColors.shadow,
+              color: AppColors.isDark(context) 
+                  ? Colors.black.withValues(alpha: 0.4) 
+                  : AppColors.shadow,
               blurRadius: 4,
-              offset: Offset(0, 4),
+              offset: const Offset(0, 4),
             )
           ],
         ),
         alignment: Alignment.center,
-        child: _content,
+        child: _content(context),
       ),
     );
   }

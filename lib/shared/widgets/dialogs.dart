@@ -71,7 +71,7 @@ class _SuccessDialogState extends State<SuccessDialog> with SingleTickerProvider
         child: Container(
           padding: const EdgeInsets.all(AppSizes.paddingLg),
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: AppColors.surface(context),
             borderRadius: BorderRadius.circular(AppSizes.radiusLg),
             boxShadow: const [
               BoxShadow(
@@ -91,7 +91,7 @@ class _SuccessDialogState extends State<SuccessDialog> with SingleTickerProvider
                   width: 80,
                   height: 80,
                   decoration: BoxDecoration(
-                    color: AppColors.success.withOpacity(0.15),
+                    color: AppColors.success.withValues(alpha: 0.15),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.lock_rounded, size: 40, color: AppColors.success),
@@ -102,7 +102,7 @@ class _SuccessDialogState extends State<SuccessDialog> with SingleTickerProvider
               // Titre
               Text(
                 widget.title,
-                style: AppTextStyles.h3.copyWith(color: AppColors.success),
+                style: AppTextStyles.h3().copyWith(color: AppColors.success),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: AppSizes.spacingSm),
@@ -110,7 +110,7 @@ class _SuccessDialogState extends State<SuccessDialog> with SingleTickerProvider
               // Message
               Text(
                 widget.message,
-                style: AppTextStyles.bodyMedium,
+                style: AppTextStyles.bodyMedium(),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: AppSizes.spacingLg),
@@ -162,20 +162,20 @@ class ConfirmDialog extends StatelessWidget {
       elevation: 0,
       child: Container(
         padding: const EdgeInsets.all(AppSizes.paddingLg),
-        decoration: AppDecorations.card(),
+        decoration: AppDecorations.card(context),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
               width: 60,
               height: 60,
-              decoration: BoxDecoration(color: color.withOpacity(0.15), shape: BoxShape.circle),
+              decoration: BoxDecoration(color: color.withValues(alpha: 0.15), shape: BoxShape.circle),
               child: Icon(isDestructive ? Icons.warning_rounded : Icons.help_rounded, size: 32, color: color),
             ),
             const SizedBox(height: AppSizes.spacingMd),
-            Text(title, style: AppTextStyles.h4, textAlign: TextAlign.center),
+            Text(title, style: AppTextStyles.h4(), textAlign: TextAlign.center),
             const SizedBox(height: AppSizes.spacingSm),
-            Text(message, style: AppTextStyles.bodyMedium, textAlign: TextAlign.center),
+            Text(message, style: AppTextStyles.bodyMedium(), textAlign: TextAlign.center),
             const SizedBox(height: AppSizes.spacingLg),
             Row(
               children: [
@@ -226,7 +226,7 @@ class InfoDialog extends StatelessWidget {
       elevation: 0,
       child: Container(
         padding: const EdgeInsets.all(AppSizes.paddingLg),
-        decoration: AppDecorations.card(),
+        decoration: AppDecorations.card(context),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -234,14 +234,29 @@ class InfoDialog extends StatelessWidget {
               Container(
                 width: 60,
                 height: 60,
-                decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.15), shape: BoxShape.circle),
+                decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.15), shape: BoxShape.circle),
                 child: Icon(icon, size: 32, color: AppColors.primary),
               ),
               const SizedBox(height: AppSizes.spacingMd),
             ],
-            Text(title, style: AppTextStyles.h4, textAlign: TextAlign.center),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary(context),
+              ),
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: AppSizes.spacingSm),
-            Text(message, style: AppTextStyles.bodyMedium, textAlign: TextAlign.center),
+            Text(
+              message,
+              style: TextStyle(
+                fontSize: 14,
+                color: AppColors.textPrimary(context),
+              ),
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: AppSizes.spacingLg),
             SizedBox(
               width: double.infinity,

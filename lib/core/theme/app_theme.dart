@@ -4,84 +4,182 @@ import '../constants/app_colors.dart';
 
 /// Thème centralisé de l'application OtterLock
 class AppTheme {
-  AppTheme._();
+  const AppTheme._();
 
-  /// Configuration du thème principal
+  /// Configuration du thème clair
   static ThemeData get lightTheme => ThemeData(
     useMaterial3: true,
-    scaffoldBackgroundColor: AppColors.background,
-    colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary, brightness: Brightness.light, surface: AppColors.surface),
-    textTheme: AppTextStyles.textTheme,
-    inputDecorationTheme: AppInputStyles.inputDecorationTheme,
+    brightness: Brightness.light,
+    scaffoldBackgroundColor: AppColors.lightBackground,
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: AppColors.primary,
+      brightness: Brightness.light,
+      surface: AppColors.lightSurface,
+      primary: AppColors.primary,
+    ),
+    textTheme: AppTextStyles.textTheme(Brightness.light),
+    inputDecorationTheme: AppInputStyles.inputDecorationTheme(Brightness.light),
     elevatedButtonTheme: AppButtonStyles.elevatedButtonTheme,
-    appBarTheme: const AppBarTheme(backgroundColor: AppColors.background, elevation: 0, systemOverlayStyle: SystemUiOverlayStyle.dark),
+    appBarTheme: const AppBarTheme(
+      backgroundColor: AppColors.primary,
+      elevation: 0,
+      systemOverlayStyle: SystemUiOverlayStyle.light,
+      iconTheme: IconThemeData(color: AppColors.textOnPrimary),
+      titleTextStyle: TextStyle(
+        color: AppColors.textOnPrimary,
+        fontSize: 20,
+        fontWeight: FontWeight.w600,
+      ),
+    ),
+    switchTheme: SwitchThemeData(
+      thumbColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return AppColors.primary;
+        }
+        return AppColors.grey400;
+      }),
+      trackColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return AppColors.primary.withValues(alpha: 0.5);
+        }
+        return AppColors.grey300;
+      }),
+    ),
+    dialogTheme: DialogThemeData(
+      backgroundColor: AppColors.lightSurface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    ),
+    bottomSheetTheme: BottomSheetThemeData(
+      backgroundColor: AppColors.lightSurface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+    ),
+  );
+
+  /// Configuration du thème sombre
+  static ThemeData get darkTheme => ThemeData(
+    useMaterial3: true,
+    brightness: Brightness.dark,
+    scaffoldBackgroundColor: AppColors.darkBackground,
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: AppColors.primary,
+      brightness: Brightness.dark,
+      surface: AppColors.darkSurface,
+      primary: AppColors.primary,
+    ),
+    textTheme: AppTextStyles.textTheme(Brightness.dark),
+    inputDecorationTheme: AppInputStyles.inputDecorationTheme(Brightness.dark),
+    elevatedButtonTheme: AppButtonStyles.elevatedButtonTheme,
+    appBarTheme: const AppBarTheme(
+      backgroundColor: AppColors.primary,
+      elevation: 0,
+      systemOverlayStyle: SystemUiOverlayStyle.light,
+      iconTheme: IconThemeData(color: AppColors.textOnPrimary),
+      titleTextStyle: TextStyle(
+        color: AppColors.textOnPrimary,
+        fontSize: 20,
+        fontWeight: FontWeight.w600,
+      ),
+    ),
+    switchTheme: SwitchThemeData(
+      thumbColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return AppColors.primary;
+        }
+        return AppColors.grey600;
+      }),
+      trackColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return AppColors.primary.withValues(alpha: 0.5);
+        }
+        return AppColors.grey700;
+      }),
+    ),
+    dialogTheme: DialogThemeData(
+      backgroundColor: AppColors.darkSurface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    ),
+    bottomSheetTheme: BottomSheetThemeData(
+      backgroundColor: AppColors.darkSurface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+    ),
   );
 }
 
 /// Styles de texte centralisés
 class AppTextStyles {
-  AppTextStyles._();
+  const AppTextStyles._();
+
+  // Couleurs de texte selon le thème
+  static Color _textPrimary(Brightness brightness) =>
+      brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary;
+  
+  static Color _textSecondary(Brightness brightness) =>
+      brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
 
   // Titres
-  static const TextStyle h1 = TextStyle(
+  static TextStyle h1([Brightness brightness = Brightness.light]) => TextStyle(
     fontSize: 32,
     fontWeight: FontWeight.bold,
-    color: AppColors.textPrimary,
+    color: _textPrimary(brightness),
     letterSpacing: -0.5,
   );
 
-  static const TextStyle h2 = TextStyle(
+  static TextStyle h2([Brightness brightness = Brightness.light]) => TextStyle(
     fontSize: 24,
     fontWeight: FontWeight.bold,
-    color: AppColors.textPrimary,
+    color: _textPrimary(brightness),
     letterSpacing: -0.5,
   );
 
-  static const TextStyle h3 = TextStyle(
+  static TextStyle h3([Brightness brightness = Brightness.light]) => TextStyle(
     fontSize: 20,
     fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
+    color: _textPrimary(brightness),
   );
 
-  static const TextStyle h4 = TextStyle(
+  static TextStyle h4([Brightness brightness = Brightness.light]) => TextStyle(
     fontSize: 18,
     fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
+    color: _textPrimary(brightness),
   );
 
   // Corps de texte
-  static const TextStyle bodyLarge = TextStyle(
+  static TextStyle bodyLarge([Brightness brightness = Brightness.light]) => TextStyle(
     fontSize: 16,
     fontWeight: FontWeight.w400,
-    color: AppColors.textPrimary,
+    color: _textPrimary(brightness),
     height: 1.5,
   );
 
-  static const TextStyle bodyMedium = TextStyle(
+  static TextStyle bodyMedium([Brightness brightness = Brightness.light]) => TextStyle(
     fontSize: 14,
     fontWeight: FontWeight.w400,
-    color: AppColors.textPrimary,
+    color: _textPrimary(brightness),
     height: 1.5,
   );
 
-  static const TextStyle bodySmall = TextStyle(
+  static TextStyle bodySmall([Brightness brightness = Brightness.light]) => TextStyle(
     fontSize: 12,
     fontWeight: FontWeight.w400,
-    color: AppColors.textSecondary,
+    color: _textSecondary(brightness),
     height: 1.4,
   );
 
   // Labels et boutons
-  static const TextStyle label = TextStyle(
+  static TextStyle label([Brightness brightness = Brightness.light]) => TextStyle(
     fontSize: 14,
     fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
+    color: _textPrimary(brightness),
   );
 
-  static const TextStyle labelSmall = TextStyle(
+  static TextStyle labelSmall([Brightness brightness = Brightness.light]) => TextStyle(
     fontSize: 12,
     fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
+    color: _textPrimary(brightness),
   );
 
   static const TextStyle button = TextStyle(
@@ -97,17 +195,17 @@ class AppTextStyles {
   );
 
   // Placeholder
-  static const TextStyle placeholder = TextStyle(
+  static TextStyle placeholder([Brightness brightness = Brightness.light]) => TextStyle(
     fontSize: 16,
     fontWeight: FontWeight.w400,
-    color: AppColors.textSecondary,
+    color: _textSecondary(brightness),
   );
 
   // Caption
-  static const TextStyle caption = TextStyle(
+  static TextStyle caption([Brightness brightness = Brightness.light]) => TextStyle(
     fontSize: 12,
     fontWeight: FontWeight.w400,
-    color: AppColors.textSecondary,
+    color: _textSecondary(brightness),
   );
 
   // Texte sur fond primaire
@@ -118,46 +216,54 @@ class AppTextStyles {
   );
 
   /// TextTheme complet pour Material
-  static TextTheme get textTheme {
-    return const TextTheme(
-      displayLarge: h1,
-      displayMedium: h2,
-      displaySmall: h3,
-      headlineMedium: h3,
-      headlineSmall: h4,
-      titleLarge: h3,
-      titleMedium: h4,
-      titleSmall: label,
-      bodyLarge: bodyLarge,
-      bodyMedium: bodyMedium,
-      bodySmall: bodySmall,
+  static TextTheme textTheme([Brightness brightness = Brightness.light]) {
+    return TextTheme(
+      displayLarge: h1(brightness),
+      displayMedium: h2(brightness),
+      displaySmall: h3(brightness),
+      headlineMedium: h3(brightness),
+      headlineSmall: h4(brightness),
+      titleLarge: h3(brightness),
+      titleMedium: h4(brightness),
+      titleSmall: label(brightness),
+      bodyLarge: bodyLarge(brightness),
+      bodyMedium: bodyMedium(brightness),
+      bodySmall: bodySmall(brightness),
       labelLarge: button,
-      labelMedium: label,
-      labelSmall: labelSmall,
+      labelMedium: label(brightness),
+      labelSmall: labelSmall(brightness),
     );
   }
 }
 
 /// Styles des champs de saisie
 class AppInputStyles {
-  AppInputStyles._();
+  const AppInputStyles._();
 
-  static InputDecorationTheme get inputDecorationTheme => InputDecorationTheme(
-    filled: true,
-    fillColor: AppColors.surface,
-    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-    hintStyle: AppTextStyles.placeholder,
-    labelStyle: AppTextStyles.label.copyWith(color: AppColors.textSecondary),
-    border: _border(),
-    enabledBorder: _border(),
-    focusedBorder: _focusedBorder(),
-    errorBorder: _errorBorder(),
-    focusedErrorBorder: _errorBorder(),
-  );
+  static InputDecorationTheme inputDecorationTheme([Brightness brightness = Brightness.light]) {
+    final isDark = brightness == Brightness.dark;
+    final fillColor = isDark ? AppColors.darkInputBackground : AppColors.lightInputBackground;
+    final borderColor = isDark ? AppColors.darkBorder : AppColors.lightBorder;
+    
+    return InputDecorationTheme(
+      filled: true,
+      fillColor: fillColor,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      hintStyle: AppTextStyles.placeholder(brightness),
+      labelStyle: AppTextStyles.label(brightness).copyWith(
+        color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+      ),
+      border: _border(borderColor),
+      enabledBorder: _border(borderColor),
+      focusedBorder: _focusedBorder(),
+      errorBorder: _errorBorder(),
+      focusedErrorBorder: _errorBorder(),
+    );
+  }
 
-  static OutlineInputBorder _border() => OutlineInputBorder(
+  static OutlineInputBorder _border(Color borderColor) => OutlineInputBorder(
     borderRadius: BorderRadius.circular(12),
-    borderSide: BorderSide(color: AppColors.primary.withOpacity(0.2), width: 1.4),
+    borderSide: BorderSide(color: borderColor, width: 1.4),
   );
 
   static OutlineInputBorder _focusedBorder() => OutlineInputBorder(
@@ -196,7 +302,7 @@ class AppInputStyles {
 
 /// Styles des boutons
 class AppButtonStyles {
-  AppButtonStyles._();
+  const AppButtonStyles._();
 
   static ElevatedButtonThemeData get elevatedButtonTheme => ElevatedButtonThemeData(
     style: ElevatedButton.styleFrom(
@@ -222,7 +328,7 @@ class AppButtonStyles {
   /// Style pour bouton secondaire
   static ButtonStyle secondaryButton({double? height}) => ElevatedButton.styleFrom(
     backgroundColor: AppColors.grey200,
-    foregroundColor: AppColors.textPrimary,
+    foregroundColor: AppColors.lightTextPrimary,
     elevation: 0,
     minimumSize: Size(double.infinity, height ?? 50),
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -242,7 +348,7 @@ class AppButtonStyles {
 
 /// Constantes de design
 class AppSizes {
-  AppSizes._();
+  const AppSizes._();
 
   // Padding & Margin
   static const double paddingXs = 4;
@@ -278,25 +384,33 @@ class AppSizes {
 
 /// Décoration de conteneurs réutilisables
 class AppDecorations {
-  AppDecorations._();
+  const AppDecorations._();
 
-  /// Carte avec ombre
-  static BoxDecoration card({Color? color}) => BoxDecoration(
-    color: color ?? AppColors.surface,
+  /// Carte avec ombre (adapté au thème)
+  static BoxDecoration card(BuildContext context) => BoxDecoration(
+    color: AppColors.cardBackground(context),
     borderRadius: BorderRadius.circular(AppSizes.radiusMd),
-    boxShadow: const [BoxShadow(color: AppColors.shadowLight, blurRadius: 8, offset: Offset(0, 2))],
+    boxShadow: [
+      BoxShadow(
+        color: AppColors.isDark(context) 
+            ? Colors.black.withValues(alpha: 0.3) 
+            : AppColors.shadowLight,
+        blurRadius: 8,
+        offset: const Offset(0, 2),
+      ),
+    ],
   );
 
-  /// Carte sans ombre
-  static BoxDecoration cardFlat({Color? color}) => BoxDecoration(
-    color: color ?? AppColors.surface,
+  /// Carte sans ombre (adapté au thème)
+  static BoxDecoration cardFlat(BuildContext context) => BoxDecoration(
+    color: AppColors.cardBackground(context),
     borderRadius: BorderRadius.circular(AppSizes.radiusMd),
   );
 
-  /// Conteneur avec bordure
-  static BoxDecoration bordered({Color? color, Color? borderColor}) => BoxDecoration(
-    color: color ?? AppColors.surface,
+  /// Conteneur avec bordure (adapté au thème)
+  static BoxDecoration bordered(BuildContext context, {Color? color, Color? borderColor}) => BoxDecoration(
+    color: color ?? AppColors.cardBackground(context),
     borderRadius: BorderRadius.circular(AppSizes.radiusMd),
-    border: Border.all(color: borderColor ?? AppColors.borderLight),
+    border: Border.all(color: borderColor ?? AppColors.border(context)),
   );
 }

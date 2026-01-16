@@ -1,6 +1,6 @@
 /// Constantes de l'application OtterLock
 class AppConstants {
-  AppConstants._();
+  const AppConstants._();
 
   // PIN
   static const int minPinLength = 4;

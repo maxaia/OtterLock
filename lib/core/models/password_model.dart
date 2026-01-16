@@ -9,6 +9,7 @@ class PasswordModel {
   final DateTime createdAt;
   final DateTime? expirationDate;
   final bool isTemporary;
+  final int leakCount; // Nombre de fuites (-1 = non vérifié, 0 = sécurisé, >0 = compromis)
 
   const PasswordModel({
     this.id,
@@ -20,7 +21,17 @@ class PasswordModel {
     required this.createdAt,
     this.expirationDate,
     this.isTemporary = false,
+    this.leakCount = -1, // Par défaut: non vérifié
   });
+
+  /// Indique si le mot de passe a été vérifié pour les fuites
+  bool get isLeakChecked => leakCount >= 0;
+  
+  /// Indique si le mot de passe est compromis
+  bool get isCompromised => leakCount > 0;
+  
+  /// Indique si le mot de passe est sécurisé (vérifié et non compromis)
+  bool get isSecure => leakCount == 0;
 
   /// Convertit le modèle en Map pour la base de données
   Map<String, dynamic> toMap() {
@@ -34,6 +45,7 @@ class PasswordModel {
       'createdAt': createdAt.toIso8601String(),
       'expirationDate': expirationDate?.toIso8601String(),
       'isTemporary': isTemporary ? 1 : 0,
+      'leakCount': leakCount,
     };
   }
 
@@ -51,6 +63,7 @@ class PasswordModel {
           ? DateTime.parse(map['expirationDate'] as String)
           : null,
       isTemporary: (map['isTemporary'] as int) == 1,
+      leakCount: map['leakCount'] as int? ?? -1,
     );
   }
 
@@ -65,6 +78,7 @@ class PasswordModel {
     DateTime? createdAt,
     DateTime? expirationDate,
     bool? isTemporary,
+    int? leakCount,
   }) {
     return PasswordModel(
       id: id ?? this.id,
@@ -76,6 +90,7 @@ class PasswordModel {
       createdAt: createdAt ?? this.createdAt,
       expirationDate: expirationDate ?? this.expirationDate,
       isTemporary: isTemporary ?? this.isTemporary,
+      leakCount: leakCount ?? this.leakCount,
     );
   }
 

@@ -8,6 +8,7 @@ import '../../shared/widgets/password_card.dart';
 import '../../shared/widgets/app_popup.dart';
 import '../password/add_password_screen.dart';
 import '../password/edit_password_screen.dart';
+import '../settings/settings_screen.dart';
 
 /// Écran principal affichant les catégories et mots de passe
 class HomeScreen extends StatefulWidget {
@@ -137,7 +138,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.background(context),
       floatingActionButton: RotationTransition(
         turns: _fabAnimation,
         child: FloatingActionButton(
@@ -192,37 +193,71 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         bottom: AppSizes.paddingMd,
       ),
       color: AppColors.primary,
+      child: Row(
+        children: [
+          // Bouton paramètres
+          GestureDetector(
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (context) => const SettingsScreen()),
+              );
+            },
             child: Container(
-        height: 48,
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(AppSizes.radiusMd),
-          border: Border.all(color: AppColors.overlayLight),
-        ),
-        child: Row(
-          children: [
-            const Padding(
-              padding: EdgeInsets.only(left: 14),
-              child: Icon(Icons.search_rounded, color: AppColors.grey400, size: 22),
-            ),
-            Expanded(
-              child: TextField(
-                focusNode: _searchFocus,
-                controller: _searchController,
-                cursorColor: AppColors.primary,
-                style: AppTextStyles.bodyMedium,
-                decoration: InputDecoration(
-                  hintText: 'Rechercher un mot de passe...',
-                  border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 10),
-                  isDense: true,
-                ),
+              height: 48,
+              width: 48,
+              decoration: BoxDecoration(
+                color: AppColors.searchBackground(context),
+                borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+                border: Border.all(color: AppColors.overlayLight),
+              ),
+              child: Icon(
+                Icons.settings,
+                color: AppColors.textSecondary(context),
+                size: 24,
               ),
             ),
-          ],
-        ),
+          ),
+          const SizedBox(width: AppSizes.spacingSm),
+          // Barre de recherche
+          Expanded(
+            child: Container(
+              height: 48,
+              decoration: BoxDecoration(
+                color: AppColors.searchBackground(context),
+                borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+                border: Border.all(color: AppColors.overlayLight),
+              ),
+              child: Row(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(left: 14),
+                    child: Icon(Icons.search_rounded, color: AppColors.textSecondary(context), size: 22),
+                  ),
+                  Expanded(
+                    child: TextField(
+                      focusNode: _searchFocus,
+                      controller: _searchController,
+                      cursorColor: AppColors.primary,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppColors.textPrimary(context),
+                      ),
+                      decoration: InputDecoration(
+                        hintText: 'Rechercher un mot de passe...',
+                        hintStyle: TextStyle(color: AppColors.textSecondary(context)),
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 10),
+                        isDense: true,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -272,20 +307,27 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             Icon(
               Icons.lock_outline_rounded,
               size: 80,
-              color: AppColors.primary.withOpacity(0.3),
+              color: AppColors.primary.withValues(alpha: 0.3),
             ),
             const SizedBox(height: AppSizes.spacingLg),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: AppTextStyles.h4,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary(context),
+              ),
             ),
             if (_searchController.text.isEmpty && _selectedCategory == 'Tous') ...[              
               const SizedBox(height: AppSizes.spacingMd),
               Text(
                 'Appuyez sur + pour ajouter\nun nouveau mot de passe',
                 textAlign: TextAlign.center,
-                style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.textSecondary(context),
+                ),
               ),
             ],
           ],
@@ -300,7 +342,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       children: [
         Text(
           '${_filteredPasswords.length} mot${_filteredPasswords.length > 1 ? 's' : ''} de passe',
-          style: AppTextStyles.h4.copyWith(color: AppColors.textSecondary),
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textSecondary(context),
+          ),
         ),
         const SizedBox(height: AppSizes.spacingMd),
         ListView.builder(
@@ -334,18 +380,21 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     title: const Text('Supprimer ce mot de passe ?'),
                     content: Text(
                       'Êtes-vous sûr de vouloir supprimer "${password.title}" ?\n\nCette action est irréversible.',
-                      style: AppTextStyles.bodyMedium,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppColors.textPrimary(context),
+                      ),
                     ),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.pop(context, false),
-                        child: Text('Annuler', style: AppTextStyles.button.copyWith(color: AppColors.textSecondary)),
+                        child: Text('Annuler', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textSecondary(context))),
                       ),
                       TextButton(
                         onPressed: () => Navigator.pop(context, true),
                         style: TextButton.styleFrom(
                           foregroundColor: AppColors.error,
-                          backgroundColor: AppColors.error.withOpacity(0.1),
+                          backgroundColor: AppColors.error.withValues(alpha: 0.1),
                         ),
                         child: Text('Supprimer', style: AppTextStyles.button.copyWith(color: AppColors.error)),
                       ),

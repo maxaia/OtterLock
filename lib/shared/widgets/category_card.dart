@@ -31,7 +31,9 @@ class CategoryCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppSizes.radiusMd),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.15),
+              color: AppColors.isDark(context) 
+                  ? Colors.black.withValues(alpha: 0.3)
+                  : Colors.black.withValues(alpha: 0.15),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),
@@ -45,21 +47,26 @@ class CategoryCard extends StatelessWidget {
             Text(
               label,
               textAlign: TextAlign.center,
-              style: AppTextStyles.h4.copyWith(color: AppColors.textOnPrimary),
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textOnPrimary,
+              ),
             ),
             if (count != null && count! > 0) ...[
               const SizedBox(height: 4),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: AppColors.textOnPrimary.withOpacity(0.2),
+                  color: AppColors.textOnPrimary.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(AppSizes.radiusSm),
                 ),
                 child: Text(
                   '$count',
-                  style: AppTextStyles.caption.copyWith(
-                    color: AppColors.textOnPrimary,
+                  style: const TextStyle(
+                    fontSize: 12,
                     fontWeight: FontWeight.w600,
+                    color: AppColors.textOnPrimary,
                   ),
                 ),
               ),

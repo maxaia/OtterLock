@@ -69,9 +69,19 @@ class _AppButtonState extends State<AppButton> with SingleTickerProviderStateMix
     }
   }
 
-  ButtonStyle get _buttonStyle {
+  ButtonStyle _getButtonStyle(BuildContext context) {
     if (widget.isError) return AppButtonStyles.errorButton(height: widget.height);
-    if (widget.isSecondary) return AppButtonStyles.secondaryButton(height: widget.height);
+    if (widget.isSecondary) {
+      // Style adapté au dark mode
+      return ElevatedButton.styleFrom(
+        backgroundColor: AppColors.isDark(context) ? AppColors.grey700 : AppColors.grey200,
+        foregroundColor: AppColors.isDark(context) ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+        elevation: 0,
+        minimumSize: Size(double.infinity, widget.height ?? 50),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        textStyle: AppTextStyles.button,
+      );
+    }
     return AppButtonStyles.primaryButton(height: widget.height);
   }
 
@@ -88,12 +98,15 @@ class _AppButtonState extends State<AppButton> with SingleTickerProviderStateMix
           width: double.infinity,
           child: ElevatedButton(
             onPressed: widget.isLoading ? null : widget.onPressed,
-            style: _buttonStyle,
+            style: _getButtonStyle(context),
             child: widget.isLoading
                 ? const SizedBox(
                     height: 20,
                     width: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(AppColors.textOnPrimary)),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2, 
+                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.textOnPrimary),
+                    ),
                   )
                 : widget.icon != null
                     ? Row(
@@ -164,25 +177,41 @@ class AppTextField extends StatelessWidget {
           enabled: enabled,
           onChanged: onChanged,
           cursorColor: AppColors.primary,
-          style: AppTextStyles.bodyLarge,
-          decoration: AppInputStyles.decoration(
+          style: TextStyle(
+            fontSize: 16,
+            color: AppColors.textPrimary(context),
+          ),
+          decoration: InputDecoration(
             hintText: hintText,
             labelText: labelText,
             suffixIcon: suffixIcon,
             prefixIcon: prefixIcon,
-          ).copyWith(
+            filled: true,
+            fillColor: AppColors.inputBackground(context),
+            hintStyle: TextStyle(color: AppColors.textSecondary(context)),
+            labelStyle: TextStyle(color: AppColors.textSecondary(context)),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: AppColors.border(context)),
+            ),
             enabledBorder: hasError 
                 ? const OutlineInputBorder(
                     borderRadius: BorderRadius.all(Radius.circular(12)),
                     borderSide: BorderSide(color: AppColors.error, width: 1.6),
                   )
-                : null,
+                : OutlineInputBorder(
+                    borderRadius: const BorderRadius.all(Radius.circular(12)),
+                    borderSide: BorderSide(color: AppColors.border(context)),
+                  ),
             focusedBorder: hasError
                 ? const OutlineInputBorder(
                     borderRadius: BorderRadius.all(Radius.circular(12)),
                     borderSide: BorderSide(color: AppColors.error, width: 1.6),
                   )
-                : null,
+                : const OutlineInputBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(12)),
+                    borderSide: BorderSide(color: AppColors.primary, width: 1.6),
+                  ),
           ),
         ),
         if (hasError)
@@ -245,15 +274,15 @@ class _AppCardState extends State<AppCard> {
         duration: const Duration(milliseconds: 150),
         padding: widget.padding ?? const EdgeInsets.all(AppSizes.paddingMd),
         decoration: widget.withShadow
-            ? AppDecorations.card(color: widget.color).copyWith(
+            ? AppDecorations.card(context).copyWith(
                 color: _isPressed 
-                    ? (widget.color ?? AppColors.surface).withOpacity(0.9)
-                    : widget.color ?? AppColors.surface,
+                    ? (widget.color ?? AppColors.cardBackground(context)).withValues(alpha: 0.9)
+                    : widget.color ?? AppColors.cardBackground(context),
               )
-            : AppDecorations.cardFlat(color: widget.color).copyWith(
+            : AppDecorations.cardFlat(context).copyWith(
                 color: _isPressed 
-                    ? (widget.color ?? AppColors.surface).withOpacity(0.9)
-                    : widget.color ?? AppColors.surface,
+                    ? (widget.color ?? AppColors.cardBackground(context)).withValues(alpha: 0.9)
+                    : widget.color ?? AppColors.cardBackground(context),
               ),
         child: widget.child,
       ),
@@ -273,7 +302,14 @@ class AppSection extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Text(label, style: AppTextStyles.label),
+      Text(
+        label, 
+        style: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: AppColors.textPrimary(context),
+        ),
+      ),
       const SizedBox(height: AppSizes.spacingSm),
       child,
     ],
@@ -317,7 +353,7 @@ class AppIconBadge extends StatelessWidget {
               ),
               child: Text(
                 count! > 9 ? '9+' : count.toString(),
-                style: AppTextStyles.caption.copyWith(
+                style: const TextStyle(
                   color: AppColors.textOnPrimary,
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
@@ -364,20 +400,10 @@ class _AppIconButtonState extends State<AppIconButton> {
         widget.onPressed();
       },
       onTapCancel: () => setState(() => _isPressed = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: _isPressed
-              ? (widget.backgroundColor ?? AppColors.grey200).withOpacity(0.8)
-              : widget.backgroundColor ?? AppColors.grey200,
-          shape: BoxShape.circle,
-        ),
-        child: Icon(
-          widget.icon,
-          size: widget.size,
-          color: widget.color ?? AppColors.textPrimary,
-        ),
+      child: Icon(
+        widget.icon,
+        size: widget.size,
+        color: widget.color ?? AppColors.textOnPrimary,
       ),
     );
   }
@@ -393,7 +419,7 @@ class AppDivider extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     height: height ?? 1,
-    color: color ?? AppColors.borderLight,
+    color: color ?? AppColors.border(context),
   );
 }
 
@@ -409,10 +435,17 @@ class AppStatusBadge extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
     decoration: BoxDecoration(
-      color: isOutlined ? Colors.transparent : color.withOpacity(0.1),
+      color: isOutlined ? Colors.transparent : color.withValues(alpha: 0.1),
       borderRadius: BorderRadius.circular(AppSizes.radiusSm),
       border: isOutlined ? Border.all(color: color) : null,
     ),
-    child: Text(text, style: AppTextStyles.labelSmall.copyWith(color: color)),
+    child: Text(
+      text, 
+      style: TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+        color: color,
+      ),
+    ),
   );
 }

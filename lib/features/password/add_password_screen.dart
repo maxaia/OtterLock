@@ -5,6 +5,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/models/password_model.dart';
 import '../../core/services/database_service.dart';
+import '../../core/services/password_breach_service.dart';
 import '../../shared/widgets/common_widgets.dart';
 import '../../shared/widgets/dialogs.dart';
 import '../../shared/widgets/app_popup.dart';
@@ -200,6 +201,60 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
     );
   }
 
+  /// Affiche un avertissement si le mot de passe est compromis
+  Future<void> _showLeakWarningDialog(int leakCount) async {
+    final formatted = PasswordBreachService.formatLeakCount(leakCount);
+    
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.cardBackground(ctx),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            const Icon(Icons.warning_amber_rounded, color: AppColors.warning, size: 32),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Attention !',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary(ctx),
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Le mot de passe a été enregistré, mais il est apparu dans $formatted.',
+              style: TextStyle(fontSize: 14, color: AppColors.textPrimary(ctx)),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Il est fortement recommandé de le changer.',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary(ctx)),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              Navigator.pop(context, true);
+            },
+            child: const Text('Je comprends'),
+          ),
+        ],
+      ),
+    );
+  }
+
   bool get _isFormValid {
     return _titleController.text.isNotEmpty &&
         _usernameController.text.isNotEmpty &&
@@ -218,6 +273,9 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
     setState(() => _isSaving = true);
     
     try {
+      // Vérifier si le mot de passe a été compromis
+      final leakCount = await PasswordBreachService.checkPasswordLeak(_passwordController.text);
+      
       // Créer la date d'expiration complète si temporaire
       DateTime? fullExpirationDate;
       if (_isTemporaryPassword && _expirationDate != null && _expirationTime != null) {
@@ -230,7 +288,7 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
         );
       }
       
-      // Créer le modèle
+      // Créer le modèle avec le résultat de vérification de fuite
       final password = PasswordModel(
         title: _titleController.text.trim(),
         username: _usernameController.text.trim(),
@@ -240,6 +298,7 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
         isTemporary: _isTemporaryPassword,
         expirationDate: fullExpirationDate,
         createdAt: DateTime.now(),
+        leakCount: leakCount,
       );
       
       // Enregistrer dans la base de données
@@ -247,14 +306,19 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
       
       if (!mounted) return;
       
-      // Afficher un message de succès
-      await AppPopup.showSuccess(
-        context,
-        message: 'Mot de passe enregistré avec succès !',
-        onContinue: () {
-          Navigator.of(context).pop(true); // Retourner true pour indiquer succès
-        },
-      );
+      // Afficher un avertissement si le mot de passe est compromis
+      if (leakCount > 0) {
+        await _showLeakWarningDialog(leakCount);
+      } else {
+        // Afficher un message de succès
+        await AppPopup.showSuccess(
+          context,
+          message: 'Mot de passe enregistré avec succès !',
+          onContinue: () {
+            Navigator.of(context).pop(true);
+          },
+        );
+      }
     } catch (e) {
       setState(() => _isSaving = false);
       
@@ -273,13 +337,20 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.background(context),
       appBar: AppBar(
         leading: AppIconButton(
           icon: Icons.close,
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: Text('Nouveau mot de passe', style: AppTextStyles.h4),
+        title: const Text(
+          'Nouveau mot de passe',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textOnPrimary,
+          ),
+        ),
         centerTitle: true,
       ),
       body: GestureDetector(
@@ -368,8 +439,8 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
             child: Container(
               height: 50,
               padding: const EdgeInsets.symmetric(horizontal: AppSizes.paddingMd),
-              decoration: AppDecorations.bordered(
-                borderColor: hasError ? AppColors.error : AppColors.borderLight,
+              decoration: AppDecorations.bordered(context,
+                borderColor: hasError ? AppColors.error : AppColors.border(context),
               ),
               child: Row(
                 children: [
@@ -380,16 +451,16 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
                   Expanded(
                     child: Text(
                       _selectedCategory?.label ?? 'Sélectionner une catégorie',
-                      style: AppTextStyles.bodyMedium.copyWith(
+                      style: AppTextStyles.bodyMedium().copyWith(
                         color: _selectedCategory != null
-                            ? AppColors.textPrimary
-                            : AppColors.textSecondary,
+                            ? AppColors.textPrimary(context)
+                            : AppColors.textSecondary(context),
                       ),
                     ),
                   ),
                   Icon(
                     _showCategoryDropdown ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                    color: AppColors.textSecondary,
+                    color: AppColors.textSecondary(context),
                   ),
                 ],
               ),
@@ -398,7 +469,7 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
           if (_showCategoryDropdown)
             Container(
               margin: const EdgeInsets.only(top: AppSizes.spacingSm),
-              decoration: AppDecorations.card(),
+              decoration: AppDecorations.card(context),
               child: Column(
                 children: PasswordCategory.values.map((cat) {
                   final isLast = cat == PasswordCategory.values.last;
@@ -411,14 +482,20 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
                       padding: const EdgeInsets.all(AppSizes.paddingMd),
                       decoration: BoxDecoration(
                         border: Border(
-                          bottom: isLast ? BorderSide.none : const BorderSide(color: AppColors.borderLight),
+                          bottom: isLast ? BorderSide.none : BorderSide(color: AppColors.border(context)),
                         ),
                       ),
                       child: Row(
                         children: [
                           Icon(cat.icon, size: 20, color: AppColors.primary),
                           const SizedBox(width: AppSizes.spacingMd),
-                          Text(cat.label, style: AppTextStyles.bodyMedium),
+                          Text(
+                            cat.label,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: AppColors.textPrimary(context),
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -435,7 +512,7 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
                   const SizedBox(width: AppSizes.spacingXs),
                   Text(
                     'Veuillez sélectionner une catégorie',
-                    style: AppTextStyles.caption.copyWith(color: AppColors.error),
+                    style: AppTextStyles.caption().copyWith(color: AppColors.error),
                   ),
                 ],
               ),
@@ -463,7 +540,7 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
                   suffixIcon: IconButton(
                     icon: Icon(
                       _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                      color: AppColors.textSecondary,
+                      color: AppColors.textSecondary(context),
                     ),
                     onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                   ),
@@ -486,7 +563,7 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
                 const SizedBox(width: AppSizes.spacingXs),
                 Text(
                   _passwordStrength!,
-                  style: AppTextStyles.caption.copyWith(color: _passwordStrengthColor),
+                  style: AppTextStyles.caption().copyWith(color: _passwordStrengthColor),
                 ),
               ],
             ),
@@ -515,7 +592,7 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
             suffixIcon: IconButton(
               icon: Icon(
                 _obscureConfirmPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                color: AppColors.textSecondary,
+                color: AppColors.textSecondary(context),
               ),
               onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
             ),
@@ -528,7 +605,7 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
                 const SizedBox(width: AppSizes.spacingXs),
                 Text(
                   'Les mots de passe correspondent',
-                  style: AppTextStyles.caption.copyWith(color: AppColors.success),
+                  style: AppTextStyles.caption().copyWith(color: AppColors.success),
                 ),
               ],
             ),
@@ -539,9 +616,13 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
   }
 
   Widget _buildTemporarySection() {
-    return AppCard(
-      withShadow: false,
-      color: AppColors.grey50,
+    return Container(
+      padding: const EdgeInsets.all(AppSizes.paddingMd),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground(context),
+        borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+        border: Border.all(color: AppColors.border(context)),
+      ),
       child: Column(
         children: [
           Row(
@@ -549,7 +630,11 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
               Flexible(
                 child: Text(
                   'Mot de passe temporaire',
-                  style: AppTextStyles.label,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary(context),
+                  ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -571,12 +656,15 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
                     _expirationDateTimeError = null;
                   }
                 }),
-                activeColor: AppColors.primary,
+                activeThumbColor: AppColors.primary,
+                activeTrackColor: AppColors.primary.withValues(alpha: 0.4),
+                inactiveThumbColor: AppColors.grey400,
+                inactiveTrackColor: AppColors.isDark(context) ? AppColors.grey700 : AppColors.grey300,
               ),
             ],
           ),
           if (_isTemporaryPassword) ...[
-            const AppDivider(),
+            Divider(color: AppColors.border(context), height: 24),
             const SizedBox(height: AppSizes.spacingMd),
             Row(
               children: [
@@ -614,7 +702,7 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
                   Flexible(
                     child: Text(
                       'Veuillez définir une date et une heure d\'expiration',
-                      style: AppTextStyles.caption.copyWith(color: AppColors.error),
+                      style: AppTextStyles.caption().copyWith(color: AppColors.error),
                       overflow: TextOverflow.visible,
                       softWrap: true,
                     ),
@@ -631,7 +719,7 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
                   Flexible(
                     child: Text(
                       _expirationDateTimeError!,
-                      style: AppTextStyles.caption.copyWith(color: AppColors.error),
+                      style: AppTextStyles.caption().copyWith(color: AppColors.error),
                       overflow: TextOverflow.visible,
                       softWrap: true,
                     ),

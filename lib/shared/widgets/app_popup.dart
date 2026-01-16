@@ -159,7 +159,7 @@ class _AppPopupState extends State<AppPopup> with SingleTickerProviderStateMixin
     child: Container(
       width: 300,
       padding: const EdgeInsets.all(AppSizes.paddingLg),
-      decoration: AppDecorations.card(),
+      decoration: AppDecorations.card(context),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -168,12 +168,19 @@ class _AppPopupState extends State<AppPopup> with SingleTickerProviderStateMixin
             child: Container(
               width: 56,
               height: 56,
-              decoration: BoxDecoration(color: _primaryColor.withOpacity(0.1), shape: BoxShape.circle),
+              decoration: BoxDecoration(color: _primaryColor.withValues(alpha: 0.1), shape: BoxShape.circle),
               child: Icon(_icon, color: _primaryColor, size: 32),
             ),
           ),
           const SizedBox(height: AppSizes.spacingMd),
-          Text(widget.message, textAlign: TextAlign.center, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.grey800)),
+          Text(
+            widget.message, 
+            textAlign: TextAlign.center, 
+            style: TextStyle(
+              fontSize: 14,
+              color: AppColors.textPrimary(context),
+            ),
+          ),
           const SizedBox(height: AppSizes.spacingLg),
           _PopupButton(text: widget.buttonText, color: _primaryColor, onPressed: widget.onButtonPressed),
         ],
@@ -209,9 +216,9 @@ class _PopupButtonState extends State<_PopupButton> {
       width: double.infinity,
       height: AppSizes.buttonHeightMd,
       decoration: BoxDecoration(
-        color: _isPressed ? widget.color.withOpacity(0.85) : widget.color,
+        color: _isPressed ? widget.color.withValues(alpha: 0.85) : widget.color,
         borderRadius: BorderRadius.circular(AppSizes.radiusMd),
-        boxShadow: _isPressed ? [] : [BoxShadow(color: widget.color.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))],
+        boxShadow: _isPressed ? [] : [BoxShadow(color: widget.color.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 4))],
       ),
       alignment: Alignment.center,
       child: Text(widget.text, style: AppTextStyles.button),
