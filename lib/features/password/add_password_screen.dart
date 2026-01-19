@@ -550,8 +550,7 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
               AppIconButton(
                 icon: Icons.refresh_rounded,
                 onPressed: _onGeneratePassword,
-                backgroundColor: AppColors.primary,
-                color: AppColors.textOnPrimary,
+                color: AppColors.primary,
               ),
             ],
           ),
